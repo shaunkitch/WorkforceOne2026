@@ -34,7 +34,7 @@ export async function getOrganization(orgId: string) {
         throw new Error("Unauthorized access to organization");
     }
 
-    return { org, role: membership.role };
+    return { ...org, role: membership.role };
 }
 
 export async function getOrganizationMembers(orgId: string) {
@@ -57,22 +57,28 @@ export async function getOrganizationMembers(orgId: string) {
         .from("organization_members")
         .select(`
       *,
-      user:user_id (
-        email
+      profiles:user_id (
+        full_name,
+        email,
+        mobile,
+        avatar_url,
+        hourly_rate
       )
     `) // Note: This assumes a relation to auth.users or a public profiles table which might differ. 
         // Based on schema in claude.md: user_id REFERENCES profiles. 
         // We might need to adjust based on actual table structure for profiles.
         .eq("organization_id", orgId);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+        throw new Error(error.message);
+    }
 
-    return members;
+    return members || [];
 }
 
 import { revalidatePath } from "next/cache";
 
-export async function updateOrganization(orgId: string, data: { name?: string; brandColor?: string; logoUrl?: string; currency?: string }) {
+export async function updateOrganization(orgId: string, data: { name?: string; brandColor?: string; logoUrl?: string; faviconUrl?: string; currency?: string }) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
@@ -81,12 +87,27 @@ export async function updateOrganization(orgId: string, data: { name?: string; b
     // The policy "Owners can update their organization" might be strict. Let's see.
     // Assuming policy is correct.
 
-    await supabase.from("organizations").update({
+    console.log("Updating organization settings:", { orgId, data });
+
+    const { data: updated, error } = await supabase.from("organizations").update({
         name: data.name,
         brand_color: data.brandColor,
         logo_url: data.logoUrl,
+        favicon_url: data.faviconUrl,
         currency: data.currency
-    }).eq("id", orgId);
+    }).eq("id", orgId).select();
+
+    if (error) {
+        console.error("Error updating organization settings:", error);
+        throw new Error("Failed to update settings: " + error.message);
+    }
+
+    if (!updated || updated.length === 0) {
+        console.error("Update failed: No rows updated. Check RLS or Invalid ID.");
+        throw new Error("No changes saved. You might not have permission (Owner required).");
+    }
+
+    console.log("Organization settings updated successfully. ID:", updated[0].id);
 
     revalidatePath(`/dashboard/${orgId}/settings`);
     revalidatePath(`/dashboard/${orgId}`);

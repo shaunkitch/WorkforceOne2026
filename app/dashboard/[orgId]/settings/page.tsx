@@ -19,6 +19,7 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
     const [name, setName] = useState("");
     const [brandColor, setBrandColor] = useState("#000000");
     const [logoUrl, setLogoUrl] = useState("");
+    const [faviconUrl, setFaviconUrl] = useState("");
     const [currency, setCurrency] = useState("USD");
 
     const [usage, setUsage] = useState<any>(null);
@@ -32,9 +33,11 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
         const load = async () => {
             const org = await getOrganization(params.orgId);
             if (org) {
+                console.log("Loaded org:", org); // Debug logic
                 setName(org.name);
                 setBrandColor(org.brand_color || "#09090b");
                 setLogoUrl(org.logo_url || "");
+                setFaviconUrl((org as any).favicon_url || "");
                 setCurrency(org.currency || "USD");
             }
             const stats = await getOrganizationUsage(params.orgId);
@@ -51,6 +54,7 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                     name,
                     brandColor,
                     logoUrl,
+                    faviconUrl,
                     currency
                 });
                 toast({ title: "Settings saved", description: "Organization settings updated successfully." });
@@ -59,6 +63,7 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
             }
         });
     };
+
 
     if (loading) {
         return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>;
@@ -137,6 +142,16 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                             <p className="text-xs text-muted-foreground">Used for payroll and user rates.</p>
                         </div>
                         <div className="grid gap-2">
+                            <Label>Organization Logo</Label>
+                            <ImageUpload value={logoUrl} onChange={setLogoUrl} />
+                            <p className="text-xs text-muted-foreground">Upload your company logo.</p>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>Organization Favicon</Label>
+                            <ImageUpload value={faviconUrl} onChange={setFaviconUrl} />
+                            <p className="text-xs text-muted-foreground">Upload your website favicon.</p>
+                        </div>
+                        <div className="grid gap-2">
                             <Label>Brand Color</Label>
                             <div className="flex gap-2">
                                 <Input type="color" className="w-12 h-10 p-1" value={brandColor} onChange={e => setBrandColor(e.target.value)} />
@@ -184,6 +199,54 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                     </CardFooter>
                 </Card>
             </div>
+        </div>
+    );
+}
+
+function ImageUpload({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onChange(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            {!value && (
+                <div className="border border-dashed p-4 rounded-md bg-muted/50 flex flex-col items-center justify-center text-muted-foreground gap-2 h-24 hover:bg-muted/70 transition-colors cursor-pointer relative">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        onChange={handleFileChange}
+                    />
+                    <HardDrive className="h-6 w-6" />
+                    <span className="text-xs">Click to Upload</span>
+                </div>
+            )}
+
+            {value && (
+                <div className="relative h-32 w-32 rounded-md border overflow-hidden group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={value} alt="Preview" className="h-full w-full object-contain bg-slate-50" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => onChange("")}
+                        >
+                            <div className="h-4 w-4">x</div>
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -83,8 +83,35 @@ export async function getFormAnalyticsStats(formId: string) {
         submissions: count
     })).sort((a, b) => a.date.localeCompare(b.date));
 
+    // 3. Assignment Stats
+    const { data: assignments } = await supabase
+        .from("form_assignments")
+        .select("status")
+        .eq("form_id", formId);
+
+    const totalAssignments = assignments?.length || 0;
+    const completedAssignments = assignments?.filter(a => a.status === 'completed').length || 0;
+    const pendingAssignments = totalAssignments - completedAssignments;
+    const completionRate = totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0;
+
+    // 4. Recent Submissions
+    // Try to join with profiles via user_id
+    const { data: recent } = await supabase
+        .from("submissions")
+        .select("id, created_at, user_id, profiles(full_name)")
+        .eq("form_id", formId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
     return {
         totalSubmissions: count || 0,
-        chartData
+        chartData,
+        assignments: {
+            total: totalAssignments,
+            completed: completedAssignments,
+            pending: pendingAssignments,
+            completionRate
+        },
+        recentSubmissions: recent || []
     };
 }

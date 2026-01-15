@@ -3,6 +3,27 @@ import { Header } from "@/components/dashboard/header";
 import PageTransition from "@/components/PageTransition";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
+
+import { hexToHSL } from "@/lib/utils";
+
+type Props = {
+  params: { orgId: string }
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const supabase = createClient();
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name, favicon_url")
+    .eq("id", params.orgId)
+    .single();
+
+  return {
+    title: org?.name ? `${org.name} - WorkforceOne` : "WorkforceOne",
+    icons: org?.favicon_url ? [{ rel: "icon", url: org.favicon_url }] : [],
+  };
+}
 
 export default async function DashboardLayout({
   children,
@@ -37,8 +58,13 @@ export default async function DashboardLayout({
   const brandColor = org?.brand_color;
   const logoUrl = org?.logo_url;
 
+  const primaryHSL = brandColor ? hexToHSL(brandColor) : null;
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div
+      className="flex h-screen overflow-hidden bg-background"
+      style={primaryHSL ? { "--primary": primaryHSL } as React.CSSProperties : undefined}
+    >
       <Sidebar
         orgId={params.orgId}
         brandColor={brandColor}

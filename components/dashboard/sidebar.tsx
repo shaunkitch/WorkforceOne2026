@@ -11,7 +11,8 @@ import {
     Users,
     BarChart3,
     Clock,
-    Banknote
+    Banknote,
+    MapPin
 } from "lucide-react";
 
 const routes = [
@@ -30,6 +31,11 @@ const routes = [
         label: "Forms",
         icon: FileText,
         href: "/forms",
+    },
+    {
+        label: "Sites & Locations",
+        icon: MapPin,
+        href: "/sites",
     },
 
     {
@@ -76,12 +82,7 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne" }
         >
             <div className="px-3 py-2 flex-1">
                 <Link href={`/dashboard/${orgId}`} className="flex items-center pl-3 mb-14">
-                    {logoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={logoUrl} alt="Logo" className="h-8 w-auto object-contain max-w-[150px]" />
-                    ) : (
-                        <h1 className="text-2xl font-bold truncate">{orgName}</h1>
-                    )}
+                    <h1 className="text-2xl font-bold truncate tracking-tight">{orgName}</h1>
                 </Link>
                 <div className="space-y-1">
                     {routes.map((route) => {
@@ -108,6 +109,12 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne" }
                     })}
                 </div>
             </div>
+            {logoUrl && (
+                <div className="p-4 flex justify-center pb-8 opacity-80 hover:opacity-100 transition-opacity">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={logoUrl} alt="Logo" className="w-full h-auto object-contain" />
+                </div>
+            )}
         </div>
     );
 }

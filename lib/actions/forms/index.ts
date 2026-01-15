@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Database, Json } from "@/types/database";
 import { revalidatePath } from "next/cache";
 
-export async function createForm(orgId: string, title: string) {
+export async function createForm(orgId: string, title: string, content?: Json) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
@@ -26,7 +26,7 @@ export async function createForm(orgId: string, title: string) {
         .insert({
             organization_id: orgId,
             title: title,
-            content: [], // Initial empty form content as array
+            content: content || [], // Use template content if provided
             is_published: false
         })
         .select()

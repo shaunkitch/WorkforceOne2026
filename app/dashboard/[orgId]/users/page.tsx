@@ -30,10 +30,10 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
-import { Loader2, Plus, UserPlus } from "lucide-react";
+import { Loader2, Plus, UserPlus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Papa from "papaparse";
-import { bulkCreateUsers } from "@/lib/actions/workforce";
+import { bulkCreateUsers, removeUser } from "@/lib/actions/workforce";
 import { Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
@@ -87,8 +87,9 @@ export default function UserDirectoryPage({ params }: { params: { orgId: string 
                                 <TableCell>{member.profiles?.email}</TableCell>
                                 <TableCell>{member.profiles?.mobile || "-"}</TableCell>
                                 <TableCell className="capitalize">{member.role}</TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right space-x-2">
                                     <EditUserDialog orgId={params.orgId} user={member} onSuccess={refresh} />
+                                    <DeleteUserBtn orgId={params.orgId} userId={member.user_id} onSuccess={refresh} />
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -96,6 +97,30 @@ export default function UserDirectoryPage({ params }: { params: { orgId: string 
                 </Table>
             </div>
         </div>
+    );
+}
+
+function DeleteUserBtn({ orgId, userId, onSuccess }: { orgId: string, userId: string, onSuccess: () => void }) {
+    const [loading, startTransition] = useTransition();
+
+    const handleDelete = () => {
+        if (!confirm("Are you sure you want to remove this user from the organization?")) return;
+
+        startTransition(async () => {
+            try {
+                await removeUser(orgId, userId);
+                toast({ title: "User Removed", description: "User has been removed from the organization." });
+                onSuccess();
+            } catch (error: any) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+            }
+        });
+    };
+
+    return (
+        <Button variant="ghost" size="icon" onClick={handleDelete} disabled={loading} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+        </Button>
     );
 }
 

@@ -17,6 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { FORM_TEMPLATES } from "@/lib/constants/templates";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -58,6 +66,24 @@ export function CreateFormButton({ orgId }: { orgId: string }) {
                     <div className="grid gap-2">
                         <Label htmlFor="description">Description</Label>
                         <Textarea id="description" name="description" />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Template</Label>
+                        <Select name="template" defaultValue="BLANK">
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a template" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(FORM_TEMPLATES).map(([key, template]) => (
+                                    <SelectItem key={key} value={key}>
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="font-medium">{template.label}</span>
+                                            <span className="text-xs text-muted-foreground">{template.description}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     {state?.error && (
                         <p className="text-sm text-red-500">{state.error}</p>

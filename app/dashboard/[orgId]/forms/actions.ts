@@ -5,9 +5,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { FORM_TEMPLATES } from "@/lib/constants/templates";
+
 const createFormSchema = z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
+    template: z.string().optional(),
 });
 
 export async function createForm(prevState: any, formData: FormData) {
@@ -21,6 +24,7 @@ export async function createForm(prevState: any, formData: FormData) {
     const rawData = {
         title: formData.get("title"),
         description: formData.get("description"),
+        template: formData.get("template"),
     };
 
     const validatedFields = createFormSchema.safeParse(rawData);
@@ -29,11 +33,22 @@ export async function createForm(prevState: any, formData: FormData) {
         return { errors: validatedFields.error.flatten().fieldErrors };
     }
 
-    const { title, description } = validatedFields.data;
+    const { title, description, template } = validatedFields.data;
     const orgId = formData.get("orgId") as string;
 
     if (!orgId) {
         return { error: "Organization ID is missing" };
+    }
+
+    let formContent: any = [];
+
+    // If a template is selected, generate its content
+    if (template && FORM_TEMPLATES[template as keyof typeof FORM_TEMPLATES]) {
+        formContent = FORM_TEMPLATES[template as keyof typeof FORM_TEMPLATES].content();
+    } else {
+        // Default blank
+        // If description was provided, we could store it, but for now let's stick to array
+        formContent = [];
     }
 
     const { data: form, error } = await supabase
@@ -41,12 +56,7 @@ export async function createForm(prevState: any, formData: FormData) {
         .insert({
             organization_id: orgId,
             title,
-            // We can store description in 'content' or add a column. 
-            // Schema says 'content jsonb', so maybe description goes there or we rely on title only for now.
-            // Let's assume standard 'content' is for the form schema.
-            // Schema.sql doesn't have 'description' column on forms table.
-            // I will ignore description for now or put it in content metadata if needed.
-            content: { description },
+            content: formContent,
             is_published: false,
         })
         .select()
@@ -58,5 +68,6 @@ export async function createForm(prevState: any, formData: FormData) {
     }
 
     revalidatePath(`/dashboard/${orgId}/forms`);
-    redirect(`/dashboard/${orgId}/forms/${form.id}/edit`);
+    // Redirect to builder instead of 'edit' (assuming builder path is canonical)
+    redirect(`/dashboard/${orgId}/forms/${form.id}`);
 }

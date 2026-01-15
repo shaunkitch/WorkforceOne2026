@@ -111,7 +111,8 @@ export async function createUser(orgId: string, data: {
 
     // 2.5 Update extended profile fields
     await adminSupabase.from("profiles").update({
-        hourly_rate: data.hourlyRate || 0
+        hourly_rate: data.hourlyRate || 0,
+        mobile: data.mobile
     }).eq("id", profileId);
 
     // 3. Add to Organization
@@ -251,4 +252,42 @@ export async function bulkCreateUsers(orgId: string, users: any[]) {
 
     revalidatePath(`/dashboard/${orgId}/users`);
     return results;
+}
+
+export async function removeUser(orgId: string, userId: string) {
+    const supabase = createClient();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) throw new Error("Unauthorized");
+
+    // Check permissions (Only admins/owners/editors?) - Usually admins/owners
+    const { data: membership } = await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("organization_id", orgId)
+        .eq("user_id", currentUser.id)
+        .single();
+
+    if (!membership || !["owner", "admin"].includes(membership.role)) {
+        throw new Error("Insufficient permissions to remove users");
+    }
+
+    // Prevent removing self?
+    if (currentUser.id === userId) {
+        // Check if they are the only owner?
+        // For now, allow leaving, but UI might warn.
+        // Actually, if I remove myself, I lose access. Safe enough.
+    }
+
+    // Delete from organziation_members
+    const { error } = await supabase
+        .from("organization_members")
+        .delete()
+        .eq("organization_id", orgId)
+        .eq("user_id", userId);
+
+    if (error) {
+        throw new Error("Failed to remove user: " + error.message);
+    }
+
+    revalidatePath(`/dashboard/${orgId}/users`);
 }

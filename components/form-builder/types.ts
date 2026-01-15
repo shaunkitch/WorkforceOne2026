@@ -13,7 +13,9 @@ export type FormElementType =
     | "SelectField"
     | "CheckboxField"
     | "LicenseField"
-    | "QRCodeField";
+    | "LicenseField"
+    | "QRCodeField"
+    | "BarcodeField";
 
 export type FormElement = {
     type: FormElementType;

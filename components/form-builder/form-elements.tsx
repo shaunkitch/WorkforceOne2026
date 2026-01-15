@@ -11,6 +11,7 @@ import { SelectFieldFormElement } from "./fields/select-field";
 import { CheckboxFieldFormElement } from "./fields/checkbox-field";
 import { LicenseFieldFormElement } from "./fields/license-field";
 import { QRCodeFieldFormElement } from "./fields/qrcode-field";
+import { BarcodeFieldFormElement } from "./fields/barcode-field";
 import { FormElementsType } from "./types";
 
 export const FormElements: FormElementsType = {
@@ -27,4 +28,5 @@ export const FormElements: FormElementsType = {
     CheckboxField: CheckboxFieldFormElement,
     LicenseField: LicenseFieldFormElement,
     QRCodeField: QRCodeFieldFormElement,
+    BarcodeField: BarcodeFieldFormElement,
 };
