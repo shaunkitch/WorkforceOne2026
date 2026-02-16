@@ -152,9 +152,9 @@ USING (
 
 -- 3. UPDATE: Owners can update
 DROP POLICY IF EXISTS "Owners can update their organization" ON organizations;
-CREATE POLICY "Owners can update their organization" ON organizations FOR UPDATE
+CREATE POLICY "Owners/Admins can update their organization" ON organizations FOR UPDATE
 TO authenticated
-USING (get_org_role_for_user(id) = 'owner');
+USING (get_org_role_for_user(id) IN ('owner', 'admin'));
 
 -- 4. DELETE: Owners can delete
 DROP POLICY IF EXISTS "Owners can delete their organization" ON organizations;

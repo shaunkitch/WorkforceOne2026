@@ -104,7 +104,7 @@ export async function updateOrganization(orgId: string, data: { name?: string; b
 
     if (!updated || updated.length === 0) {
         console.error("Update failed: No rows updated. Check RLS or Invalid ID.");
-        throw new Error("No changes saved. You might not have permission (Owner required).");
+        throw new Error("No changes saved. You might not have permission (Owner/Admin required).");
     }
 
     console.log("Organization settings updated successfully. ID:", updated[0].id);
