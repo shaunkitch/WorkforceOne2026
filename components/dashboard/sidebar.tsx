@@ -16,7 +16,12 @@ import {
     Package,
     Briefcase,
     CalendarDays,
-    Receipt
+
+    Receipt,
+    ShieldCheck,
+    AlertTriangle,
+    ScanLine,
+    ClipboardList
 } from "lucide-react";
 
 const routes = [
@@ -143,11 +148,6 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne", 
                     href: "/clients",
                 },
                 {
-                    label: "Visits",
-                    icon: CalendarDays,
-                    href: "/visits",
-                },
-                {
                     label: "Quotes",
                     icon: Receipt,
                     href: "/quotes",
@@ -176,10 +176,41 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne", 
             ]
         },
         {
+            label: "Security",
+            // visible: features.security || true, // TODO: Enable feature flag
+            routes: [
+                {
+                    label: "Overview",
+                    icon: ShieldCheck,
+                    href: "/security",
+                },
+                {
+                    label: "Checkpoints",
+                    icon: ScanLine,
+                    href: "/security/checkpoints",
+                },
+                {
+                    label: "Patrols",
+                    icon: ClipboardList,
+                    href: "/security/patrols",
+                },
+                {
+                    label: "Incidents",
+                    icon: AlertTriangle,
+                    href: "/security/incidents",
+                },
+                {
+                    label: "Security Settings",
+                    icon: Settings,
+                    href: "/security/settings",
+                },
+            ]
+        },
+        {
             label: "Settings",
             routes: [
                 {
-                    label: "Settings",
+                    label: "Global Settings",
                     icon: Settings,
                     href: "/settings",
                 },

@@ -77,19 +77,23 @@ export default async function DashboardLayout({
 
   return (
     <div
-      className="flex h-screen overflow-hidden bg-background"
+      className="flex h-screen overflow-hidden bg-background print:block print:h-auto print:overflow-visible"
       style={primaryHSL ? { "--primary": primaryHSL } as React.CSSProperties : undefined}
     >
-      <Sidebar
-        orgId={params.orgId}
-        brandColor={brandColor}
-        logoUrl={logoUrl}
-        orgName={orgName}
-        features={features}
-      />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header user={user} orgName={orgName} />
-        <main className="flex-1 overflow-y-auto p-8">
+      <div className="print:hidden">
+        <Sidebar
+          orgId={params.orgId}
+          brandColor={brandColor}
+          logoUrl={logoUrl}
+          orgName={orgName}
+          features={features}
+        />
+      </div>
+      <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible print:h-auto">
+        <div className="print:hidden">
+          <Header user={user} orgName={orgName} />
+        </div>
+        <main className="flex-1 overflow-y-auto p-8 print:p-0 print:overflow-visible print:h-auto">
           <PageTransition>
             {children}
           </PageTransition>

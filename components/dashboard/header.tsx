@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { NotificationsPopover } from "./notifications-popover";
 import { User } from "@supabase/supabase-js";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +29,7 @@ export function Header({ user, orgName }: HeaderProps) {
                 <h2 className="text-lg font-semibold">{orgName}</h2>
             </div>
             <div className="flex items-center gap-4">
+                <NotificationsPopover />
                 <TimeClockWrapper />
                 <div className="text-sm text-muted-foreground hidden sm:block">
                     {user.email}

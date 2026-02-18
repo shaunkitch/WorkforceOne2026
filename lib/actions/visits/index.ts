@@ -18,7 +18,7 @@ export type Visit = {
     profiles?: { full_name: string } | null;
 }
 
-export async function getVisits(orgId: string) {
+export async function getVisits(orgId: string, filters?: { clientId?: string }) {
     const supabase = createClient();
 
     let user = null;
@@ -35,20 +35,26 @@ export async function getVisits(orgId: string) {
         throw new Error("Unauthorized");
     }
 
-    const { data: visits, error } = await supabase
+    let query = supabase
         .from("visits")
         .select(`
             *,
             clients (name, address),
             profiles (full_name)
         `)
-        .eq("organization_id", orgId)
-        .order("scheduled_at", { ascending: false });
+        .eq("organization_id", orgId);
+
+    if (filters?.clientId) {
+        query = query.eq("client_id", filters.clientId);
+    }
+
+    const { data: visits, error } = await query.order("scheduled_at", { ascending: false });
 
     if (error) throw new Error(error.message);
 
     return visits as Visit[];
 }
+
 
 export async function createVisit(orgId: string, data: { clientId: string; title: string; description?: string; scheduledAt: string; userId?: string; recurrence?: string }) {
     const supabase = createClient();

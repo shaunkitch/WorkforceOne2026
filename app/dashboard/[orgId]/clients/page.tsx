@@ -1,8 +1,9 @@
 import { ClientDialog } from "@/components/clients/client-dialog";
 import { getClients, deleteClient } from "@/lib/actions/clients";
-import { Trash2, Users, MapPin, Phone, Mail } from "lucide-react";
+import { Trash2, Users, MapPin, Phone, Mail, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 export default async function ClientsPage({ params }: { params: { orgId: string } }) {
     const clients = await getClients(params.orgId);
@@ -52,7 +53,9 @@ export default async function ClientsPage({ params }: { params: { orgId: string 
                                         <td className="p-4 align-middle font-medium">
                                             <div className="flex items-center">
                                                 <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                                                {client.name}
+                                                <Link href={`/dashboard/${params.orgId}/clients/${client.id}`} className="hover:underline font-medium">
+                                                    {client.name}
+                                                </Link>
                                             </div>
                                         </td>
                                         <td className="p-4 align-middle">
@@ -85,14 +88,21 @@ export default async function ClientsPage({ params }: { params: { orgId: string 
                                             </span>
                                         </td>
                                         <td className="p-4 align-middle text-right">
-                                            <form action={async () => {
-                                                "use server"
-                                                await deleteClient(params.orgId, client.id)
-                                            }}>
-                                                <Button variant="ghost" size="icon" type="submit">
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </form>
+                                            <div className="flex justify-end gap-2">
+                                                <Link href={`/dashboard/${params.orgId}/clients/${client.id}`}>
+                                                    <Button variant="outline" size="icon" title="View Details">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                <form action={async () => {
+                                                    "use server"
+                                                    await deleteClient(params.orgId, client.id)
+                                                }}>
+                                                    <Button variant="ghost" size="icon" type="submit">
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

@@ -29,7 +29,8 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
         payroll: false,
         crm: false,
         operations: false,
-        automations: false
+        automations: false,
+        security: false
     });
 
     const [usage, setUsage] = useState<any>(null);
@@ -56,6 +57,8 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                         crm: (org.features as any).crm || false,
                         operations: (org.features as any).operations || false,
                         automations: (org.features as any).automations || false,
+                        security: (org.features as any).security || false,
+                        security_manual_check: (org.features as any).security_manual_check || false,
                     });
                 }
             }
@@ -222,18 +225,34 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between space-x-2">
                             <div className="space-y-0.5">
-                                <Label>Enforce Two-Factor Authentication</Label>
+                                <Label>Enforce Two-Factor Authentication (Coming Soon)</Label>
                                 <p className="text-xs text-muted-foreground">Require all members to use 2FA.</p>
                             </div>
-                            <Switch checked={enforce2FA} onCheckedChange={setEnforce2FA} />
+                            <Switch checked={enforce2FA} onCheckedChange={setEnforce2FA} disabled />
                         </div>
                         <div className="flex items-center justify-between space-x-2">
                             <div className="space-y-0.5">
-                                <Label>Require Location on Submissions</Label>
+                                <Label>Require Location on Submissions (Coming Soon)</Label>
                                 <p className="text-xs text-muted-foreground">Force GPS capture for all mobile form submissions.</p>
                             </div>
-                            <Switch checked={requireLocation} onCheckedChange={setRequireLocation} />
+                            <Switch checked={requireLocation} onCheckedChange={setRequireLocation} disabled />
                         </div>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between space-x-2">
+                            <div className="space-y-0.5">
+                                <Label>Allow Manual Checkpoints</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Allow security guards to manually check off checkpoints without scanning a QR code (e.g. if damaged).
+                                </p>
+                            </div>
+                            <Switch
+                                checked={(features as any).security_manual_check || false}
+                                onCheckedChange={(checked) => setFeatures({ ...features, security_manual_check: checked } as any)}
+                            />
+                        </div>
+
                         <div className="grid gap-2 pt-2">
                             <Label>Allowed IP Ranges</Label>
                             <Input value={allowedIPs} onChange={e => setAllowedIPs(e.target.value)} placeholder="e.g. 192.168.1.0/24" />
@@ -241,7 +260,10 @@ export default function OrganizationSettingsPage({ params }: { params: { orgId: 
                         </div>
                     </CardContent>
                     <CardFooter className="border-t px-6 py-4 bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Security settings are auto-saved in this demo.</p>
+                        <Button onClick={handleSave} disabled={saving} variant="outline" size="sm">
+                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Security Settings
+                        </Button>
                     </CardFooter>
                 </Card>
 

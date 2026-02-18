@@ -25,9 +25,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface VisitDialogProps {
     orgId: string;
     visit?: Visit; // Optional visit object for editing
+    defaultClientId?: string; // Pre-select a client
 }
 
-export function VisitDialog({ orgId, visit }: VisitDialogProps) {
+export function VisitDialog({ orgId, visit, defaultClientId }: VisitDialogProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [open, setOpen] = useState(false)
@@ -35,7 +36,7 @@ export function VisitDialog({ orgId, visit }: VisitDialogProps) {
     const [clients, setClients] = useState<any[]>([])
     const [members, setMembers] = useState<any[]>([])
 
-    const [clientId, setClientId] = useState("")
+    const [clientId, setClientId] = useState(defaultClientId || "")
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
     const [date, setDate] = useState("")
@@ -69,13 +70,15 @@ export function VisitDialog({ orgId, visit }: VisitDialogProps) {
                 // For editing a single instance, we usually disable recurrence editing or reset it.
                 // We'll leave it as 'none' to avoid accidentally generating MORE duplicates edits.
             } else {
-                // Reset if creating new (and not just reopening edit)
-                // Actually this useEffect runs on open=true.
-                // If not visiting, we might want to clear.
-                // But state persistence is nice.
+                // Reset if creating new
+                if (defaultClientId) {
+                    setClientId(defaultClientId);
+                } else {
+                    setClientId("");
+                }
             }
         }
-    }, [open, orgId, visit]);
+    }, [open, orgId, visit, defaultClientId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

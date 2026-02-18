@@ -40,6 +40,7 @@ const AVAILABLE_FEATURES: Feature[] = [
     { id: "crm", label: "CRM & Sales", description: "Clients, Visits, Quotes." },
     { id: "operations", label: "Operations", description: "Sites, Inventory, Audits." },
     { id: "automations", label: "Automations", description: "Form workflows." },
+    { id: "security", label: "Security & Patrols", description: "Guard patrols, checkpoints, incidents." },
 ];
 
 interface FeatureSelectorProps {

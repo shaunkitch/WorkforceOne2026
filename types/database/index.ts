@@ -117,6 +117,23 @@ export interface Database {
           updated_at?: string
         }
       }
+      form_statistics: {
+        Row: {
+          form_id: string
+          submission_count: number
+          last_submission_at: string | null
+        }
+        Insert: {
+          form_id: string
+          submission_count?: number
+          last_submission_at?: string | null
+        }
+        Update: {
+          form_id?: string
+          submission_count?: number
+          last_submission_at?: string | null
+        }
+      },
       submissions: {
         Row: {
           id: string
@@ -282,6 +299,153 @@ export interface Database {
           created_at?: string
         }
       }
+    },
+    checkpoints: {
+      Row: {
+        id: string
+        organization_id: string
+        site_id: string
+        name: string
+        description: string | null
+        qr_code: string
+        order: number
+        is_active: boolean
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        organization_id: string
+        site_id: string
+        name: string
+        description?: string | null
+        qr_code: string
+        order?: number
+        is_active?: boolean
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        organization_id?: string
+        site_id?: string
+        name?: string
+        description?: string | null
+        qr_code?: string
+        order?: number
+        is_active?: boolean
+        created_at?: string
+        updated_at?: string
+      }
+    },
+    patrols: {
+      Row: {
+        id: string
+        organization_id: string
+        site_id: string
+        user_id: string | null
+        status: 'started' | 'completed' | 'incomplete'
+        started_at: string
+        ended_at: string | null
+        notes: string | null
+        created_at: string
+      }
+      Insert: {
+        id?: string
+        organization_id: string
+        site_id: string
+        user_id?: string | null
+        status?: 'started' | 'completed' | 'incomplete'
+        started_at?: string
+        ended_at?: string | null
+        notes?: string | null
+        created_at?: string
+      }
+      Update: {
+        id?: string
+        organization_id?: string
+        site_id?: string
+        user_id?: string | null
+        status?: 'started' | 'completed' | 'incomplete'
+        started_at?: string
+        ended_at?: string | null
+        notes?: string | null
+        created_at?: string
+      }
+    },
+    patrol_logs: {
+      Row: {
+        id: string
+        patrol_id: string
+        checkpoint_id: string | null
+        scanned_at: string
+        location: Json | null
+        status: string
+        created_at: string
+      }
+      Insert: {
+        id?: string
+        patrol_id: string
+        checkpoint_id?: string | null
+        scanned_at?: string
+        location?: Json | null
+        status?: string
+        created_at?: string
+      }
+      Update: {
+        id?: string
+        patrol_id?: string
+        checkpoint_id?: string | null
+        scanned_at?: string
+        location?: Json | null
+        status?: string
+        created_at?: string
+      }
+    },
+    incidents: {
+      Row: {
+        id: string
+        organization_id: string
+        patrol_id: string | null
+        user_id: string | null
+        title: string
+        description: string | null
+        priority: 'low' | 'medium' | 'high' | 'critical'
+        status: 'open' | 'investigating' | 'resolved' | 'closed'
+        photos: string[] | null
+        location: Json | null
+        created_at: string
+        updated_at: string
+      }
+      Insert: {
+        id?: string
+        organization_id: string
+        patrol_id?: string | null
+        user_id?: string | null
+        title: string
+        description?: string | null
+        priority?: 'low' | 'medium' | 'high' | 'critical'
+        status?: 'open' | 'investigating' | 'resolved' | 'closed'
+        photos?: string[] | null
+        location?: Json | null
+        created_at?: string
+        updated_at?: string
+      }
+      Update: {
+        id?: string
+        organization_id?: string
+        patrol_id?: string | null
+        user_id?: string | null
+        title?: string
+        description?: string | null
+        priority?: 'low' | 'medium' | 'high' | 'critical'
+        status?: 'open' | 'investigating' | 'resolved' | 'closed'
+        photos?: string[] | null
+        location?: Json | null
+        created_at?: string
+        updated_at?: string
+      }
     }
   }
+}
 }

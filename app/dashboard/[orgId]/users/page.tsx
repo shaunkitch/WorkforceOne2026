@@ -60,6 +60,7 @@ export default function UserDirectoryPage({ params }: { params: { orgId: string 
         <div className="space-y-4">
             <div className="flex justify-end gap-2">
                 <BulkImportBtn orgId={params.orgId} onSuccess={refresh} />
+                <NotifyAllDialog orgId={params.orgId} />
                 <CreateUserBtn orgId={params.orgId} currency={organization?.currency} onSuccess={refresh} />
             </div>
 
@@ -94,6 +95,7 @@ export default function UserDirectoryPage({ params }: { params: { orgId: string 
                                 <TableCell>{member.profiles?.mobile || "-"}</TableCell>
                                 <TableCell className="capitalize">{member.role}</TableCell>
                                 <TableCell className="text-right space-x-2">
+                                    <SendNotificationDialog orgId={params.orgId} userId={member.user_id} userName={member.profiles?.full_name || "User"} />
                                     <EditUserDialog orgId={params.orgId} user={member} currency={organization?.currency} onSuccess={refresh} />
                                     <DeleteUserBtn orgId={params.orgId} userId={member.user_id} onSuccess={refresh} />
                                 </TableCell>
@@ -105,6 +107,165 @@ export default function UserDirectoryPage({ params }: { params: { orgId: string 
         </div>
     );
 }
+
+import { Textarea } from "@/components/ui/textarea";
+import { sendNotification, sendNotificationToAll } from "@/lib/actions/notifications";
+import { BellRing } from "lucide-react";
+
+// ... (existing helper functions)
+
+function NotifyAllDialog({ orgId }: { orgId: string }) {
+    const [open, setOpen] = useState(false);
+    const [loading, startTransition] = useTransition();
+    const [title, setTitle] = useState("");
+    const [message, setMessage] = useState("");
+    const [type, setType] = useState<"info" | "success" | "warning" | "error">("info");
+
+    const handleSend = () => {
+        if (!title || !message) return;
+        if (!confirm("Are you sure you want to send this notification to ALL users?")) return;
+
+        startTransition(async () => {
+            try {
+                const res = await sendNotificationToAll(orgId, title, message, type);
+                if (res.success) {
+                    toast({ title: "Notifications Sent", description: `Sent to ${res.count} users.` });
+                    setOpen(false);
+                    setTitle("");
+                    setMessage("");
+                    setType("info");
+                } else {
+                    throw new Error(res.error);
+                }
+            } catch (error: any) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+            }
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                    <BellRing className="h-4 w-4" />
+                    Notify All
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Notify All Users</DialogTitle>
+                    <DialogDescription>Send a push notification to every user in this organization.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Announcement Title" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Message</Label>
+                        <Textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Type your message here..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Type</Label>
+                        <Select value={type} onValueChange={(val: any) => setType(val)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="info">Info (Blue)</SelectItem>
+                                <SelectItem value="success">Success (Green)</SelectItem>
+                                <SelectItem value="warning">Warning (Orange)</SelectItem>
+                                <SelectItem value="error">Error (Red)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSend} disabled={loading}>
+                        {loading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
+                        Send to All
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
+
+
+function SendNotificationDialog({ orgId, userId, userName }: { orgId: string, userId: string, userName: string }) {
+    const [open, setOpen] = useState(false);
+    const [loading, startTransition] = useTransition();
+    const [title, setTitle] = useState("");
+    const [message, setMessage] = useState("");
+    const [type, setType] = useState<"info" | "success" | "warning" | "error">("info");
+
+    const handleSend = () => {
+        if (!title || !message) return;
+        startTransition(async () => {
+            try {
+                const res = await sendNotification(orgId, userId, title, message, type);
+                if (res.success) {
+                    toast({ title: "Notification Sent", description: `Sent to ${userName}` });
+                    setOpen(false);
+                    setTitle("");
+                    setMessage("");
+                    setType("info");
+                } else {
+                    throw new Error(res.error);
+                }
+            } catch (error: any) {
+                toast({ title: "Error", description: error.message, variant: "destructive" });
+            }
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="Send Notification">
+                    <BellRing className="h-4 w-4 text-slate-500" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Send Notification</DialogTitle>
+                    <DialogDescription>Send a push notification to {userName}.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Notification Title" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Message</Label>
+                        <Textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Type your message here..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Type</Label>
+                        <Select value={type} onValueChange={(val: any) => setType(val)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="info">Info (Blue)</SelectItem>
+                                <SelectItem value="success">Success (Green)</SelectItem>
+                                <SelectItem value="warning">Warning (Orange)</SelectItem>
+                                <SelectItem value="error">Error (Red)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSend} disabled={loading}>
+                        {loading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
+                        Send
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 
 function DeleteUserBtn({ orgId, userId, onSuccess }: { orgId: string, userId: string, onSuccess: () => void }) {
     const [loading, startTransition] = useTransition();

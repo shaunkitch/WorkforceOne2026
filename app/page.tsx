@@ -1,8 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -13,7 +15,10 @@ import {
   Globe,
   Clock,
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  LayoutDashboard,
+  CreditCard,
+  FileText
 } from "lucide-react";
 import {
   Accordion,
@@ -23,308 +28,248 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 
-export default async function IndexPage() {
-  const supabase = createClient();
-
-  let user = null;
-  try {
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
-  } catch (error) {
-    console.error("IndexPage Auth Error:", error);
-  }
-
-  if (user) {
-    redirect('/dashboard');
-  }
-
+export default function IndexPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-black overflow-x-hidden">
       <SiteHeader />
       <main className="flex-1">
 
         {/* --- HERO SECTION --- */}
-        <section className="relative overflow-hidden bg-background pt-16 md:pt-20 lg:pt-32 pb-16 md:pb-20 lg:pb-32">
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-          <div className="container flex flex-col items-center text-center gap-6">
-            <Badge variant="outline" className="px-4 py-1 border-primary/20 bg-primary/5 text-primary rounded-full text-sm font-medium mb-4">
-              ✨ New: AI-Powered Form Building
-            </Badge>
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground max-w-4xl text-balance">
-              Manage your Workforce.<br />
-              <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
-                Automate the Rest.
+        <section className="relative overflow-hidden pt-20 md:pt-32 pb-32">
+          {/* Background Gradients */}
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+
+          <div className="container relative z-10 flex flex-col items-center text-center">
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Badge variant="outline" className="px-4 py-1.5 border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full text-sm font-medium mb-8 backdrop-blur-md">
+                ✨ The Operating System for Field Operations
+              </Badge>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="font-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-slate-900 dark:text-white max-w-5xl text-balance mb-8"
+            >
+              One Platform. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                Limitless Possibilities.
               </span>
-            </h1>
-            <p className="max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed text-balance">
-              WorkforceOne creates the bridge between your field teams and your office.
-              Build powerful forms, track time, manage payroll, and automate workflows—all in one beautiful platform.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-8 w-full sm:w-auto">
-              <Button asChild size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/25 transition-all hover:scale-105">
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="max-w-2xl text-lg sm:text-xl text-slate-600 dark:text-slate-400 leading-relaxed text-balance mb-10"
+            >
+              From Payroll and HR to Security Patrols and CRM. WorkforceOne is the modular platform that grows with your business. Turn features on and off as you need them.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            >
+              <Button asChild size="lg" className="h-14 px-8 text-lg rounded-full shadow-lg shadow-blue-500/25 transition-transform hover:scale-105 bg-blue-600 hover:bg-blue-700">
                 <Link href="/signup">
-                  Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+                  Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base bg-background/50 backdrop-blur border-muted-foreground/20">
-                <Link href="#features">View Features</Link>
+              <Button asChild variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur hover:bg-slate-100 dark:hover:bg-slate-800">
+                <Link href="#features">Explore Modules</Link>
               </Button>
-            </div>
+            </motion.div>
 
-            {/* Hero Image / Dashboard Preview */}
-            <div className="mt-16 relative w-full max-w-5xl rounded-xl border bg-card p-2 shadow-2xl">
-              <div className="rounded-lg bg-muted/50 aspect-video w-full flex items-center justify-center text-muted-foreground overflow-hidden">
+            {/* CSS 3D Dashboard Mockup */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, rotateX: 20 }}
+              animate={{ opacity: 1, y: 0, rotateX: 10 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="mt-20 relative w-full max-w-6xl perspective-1000"
+              style={{ perspective: "1000px" }}
+            >
+              <div
+                className="relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out"
+                style={{ transformStyle: "preserve-3d", transform: "rotateX(10deg)" }}
+              >
+                {/* Header Bar Mock */}
+                <div className="h-12 border-b border-slate-100 dark:border-slate-800 flex items-center px-4 gap-2 bg-slate-50/50">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="flex-1 text-center text-xs text-slate-400 font-mono">dashboard.workforceone.com</div>
+                </div>
+                {/* Content Image */}
                 <img
-                  src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop"
-                  alt="Dashboard Preview"
-                  className="w-full h-full object-cover opacity-90 hover:scale-105 transition-transform duration-700"
+                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2600&auto=format&fit=crop"
+                  alt="Dashboard Interface"
+                  className="w-full h-auto object-cover opacity-90"
                 />
+
+                {/* Floating Elements (Mock) */}
+                <div className="absolute top-1/4 -right-12 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 animate-float hidden md:block">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle2 className="text-green-600 w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800 dark:text-white">Audit Complete</div>
+                      <div className="text-xs text-slate-500">Just now</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-1/4 -left-12 p-4 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 animate-float-delayed hidden md:block">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Users className="text-blue-600 w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800 dark:text-white">New Employee</div>
+                      <div className="text-xs text-slate-500">Added via Mobile</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* --- SOCIAL PROOF --- */}
-        <section className="py-12 bg-muted/30 border-y">
-          <div className="container text-center">
-            <p className="text-sm font-semibold text-muted-foreground mb-8">TRUSTED BY INNOVATIVE TEAMS WORLDWIDE</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 grayscale opacity-60">
-              {['Acme Corp', 'GlobalTech', 'Nebula', 'Spherix', 'Quotient'].map((brand) => (
-                <div key={brand} className="text-xl font-bold font-heading">{brand}</div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* --- FEATURES GRID --- */}
-        <section id="features" className="container py-24 space-y-24">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">Everything you need to run your operations</h2>
-            <p className="text-lg text-muted-foreground">Stop jumping between five different apps. WorkforceOne brings your essential tools together.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={Smartphone}
-              title="Mobile-First Forms"
-              description="Build complex forms with drag-and-drop ease. Capture photos, signatures, GPS locations, and offline data from any device."
-            />
-            <FeatureCard
-              icon={Zap}
-              title="Smart Automations"
-              description="Trigger emails, webhooks, or database updates instantly when a form is submitted. Put your workflows on autopilot."
-            />
-            <FeatureCard
-              icon={Clock}
-              title="Time & Attendance"
-              description="Geofenced clock-in/out for field staff. Generate timesheets automatically and track overtime with precision."
-            />
-            <FeatureCard
-              icon={Users}
-              title="HR & Payroll"
-              description="Manage employee profiles, calculate pay runs based on tracked hours, and handle varying currency rates."
-            />
-            <FeatureCard
-              icon={BarChart3}
-              title="Real-time Analytics"
-              description="Turn raw data into actionable insights. Visualize trends in submissions, efficiency, and costs with custom dashboards."
-            />
-            <FeatureCard
-              icon={ShieldCheck}
-              title="Enterprise Security"
-              description="Rest easy with role-based access control (RBAC), audit logs, and secure data encryption standards."
-            />
-          </div>
-        </section>
-
-        {/* --- DEEP DIVE SECTION (Alternating) --- */}
-        <section className="py-24 bg-slate-50 dark:bg-slate-950/50">
-          <div className="container space-y-24">
-            {/* Feature 1 */}
-            <div className="flex flex-col md:flex-row items-center gap-12">
-              <div className="flex-1 space-y-6">
-                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400">Easy Form Builder</Badge>
-                <h3 className="text-3xl md:text-4xl font-bold">Unleash your data collection potential</h3>
-                <p className="text-lg text-muted-foreground">
-                  Create dynamic forms with conditional logic, repeatable sections, and rich media uploads.
-                  Our AI assistant can even build the form for you—just upload a PDF or describe what you need.
-                </p>
-                <ul className="space-y-3 pt-4">
-                  {['Drag-and-drop interface', 'AI-powered generation', 'Offline capability', 'Conditional logic'].map(item => (
-                    <li key={item} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex-1 rounded-xl bg-background shadow-2xl border p-2 ring-1 ring-slate-200 dark:ring-slate-800">
-                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60" alt="Form Builder" className="rounded-lg w-full h-auto object-cover aspect-[4/3]" />
-              </div>
-            </div>
-
-            {/* Feature 2 (Reverse) */}
-            <div className="flex flex-col md:flex-row-reverse items-center gap-12">
-              <div className="flex-1 space-y-6">
-                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400">Remote Workforce</Badge>
-                <h3 className="text-3xl md:text-4xl font-bold">Manage your team, wherever they are</h3>
-                <p className="text-lg text-muted-foreground">
-                  From onboarding to payroll, handle the entire employee lifecycle.
-                  Track live GPS locations during work hours and ensure accurate timekeeping for billing.
-                </p>
-                <ul className="space-y-3 pt-4">
-                  {['Live GPS Tracking', 'Automated Timesheets', 'Multi-currency Payroll', 'Team Management'].map(item => (
-                    <li key={item} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex-1 rounded-xl bg-background shadow-2xl border p-2 ring-1 ring-slate-200 dark:ring-slate-800">
-                <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=60" alt="Team Management" className="rounded-lg w-full h-auto object-cover aspect-[4/3]" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* --- PRICING --- */}
-        <section id="pricing" className="container py-24 text-center">
-          <div className="max-w-3xl mx-auto space-y-4 mb-16">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">Simple, transparent pricing</h2>
-            <p className="text-lg text-muted-foreground">Start for free, scale as you grow.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Free Tier */}
-            <PricingCard
-              title="Starter"
-              price="$0"
-              description="Perfect for small teams getting started."
-              features={['1 Admin User', '5 Forms', '100 Submissions/mo', 'Basic Analytics', 'Community Support']}
-              cta="Start Free"
-              href="/signup"
-            />
-            {/* Pro Tier */}
-            <PricingCard
-              title="Professional"
-              price="$29"
-              period="/mo"
-              description="For growing businesses needing automation."
-              popular={true}
-              features={['5 Admin Users', 'Unlimited Forms', '5,000 Submissions/mo', 'Automations & Webhooks', 'Priority Support', 'Remove Branding']}
-              cta="Start Trial"
-              href="/signup"
-              variant="default"
-            />
-            {/* Enterprise Tier */}
-            <PricingCard
-              title="Enterprise"
-              price="Custom"
-              description="For large organizations with custom needs."
-              features={['Unlimited Users', 'Unlimited Submissions', 'SLA Guarantee', 'Dedicated Success Manager', 'SSO & Advanced Security', 'Custom Integrations']}
-              cta="Contact Sales"
-              href="mailto:sales@workforceone.com"
-            />
-          </div>
-        </section>
-
-        {/* --- FAQ --- */}
-        <section className="container py-24 max-w-3xl">
-          <h2 className="text-3xl font-bold tracking-tight text-center mb-12">Frequently Asked Questions</h2>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>Can I import existing PDFs?</AccordionTrigger>
-              <AccordionContent>
-                Yes! With our AI Smart Import, you can upload any PDF form and we will convert it into a digital, mobile-friendly form in seconds.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger>Does the app work offline?</AccordionTrigger>
-              <AccordionContent>
-                Absolutely. The mobile app allows your field team to collect data, photos, and signatures without an internet connection. Data syncs automatically when they go back online.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger>How does payroll calculation work?</AccordionTrigger>
-              <AccordionContent>
-                We use the clocked hours from your team and multiply them by their set hourly rates. You can then generate pay runs for specific periods and export them for payment.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-4">
-              <AccordionTrigger>Is my data secure?</AccordionTrigger>
-              <AccordionContent>
-                We take security seriously. All data is encrypted at rest and in transit. We use enterprise-grade cloud infrastructure and perform regular security audits.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </section>
-
-        {/* --- BOTTOM CTA --- */}
-        <section className="container py-24">
-          <div className="relative rounded-3xl overflow-hidden bg-primary px-6 py-16 sm:px-12 sm:py-24 md:py-32 text-center shadow-2xl">
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-            <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-              <h2 className="text-3xl font-bold tracking-tight text-primary-foreground sm:text-4xl md:text-5xl">
-                Ready to revolutionize your workforce?
-              </h2>
-              <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-                Join the thousands of forward-thinking companies building better operations with WorkforceOne.
+        {/* --- MODULAR FEATURES (BENTO GRID) --- */}
+        <section id="features" className="py-24 bg-white dark:bg-slate-950">
+          <div className="container">
+            <div className="text-center max-w-3xl mx-auto space-y-4 mb-20">
+              <Badge variant="secondary" className="mb-4">Modular Architecture</Badge>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-5xl text-slate-900 dark:text-white">Build your perfect platform</h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
+                WorkforceOne isn't just one app. It's a suite of powerful modules that work together seamlessly.
+                Enable what you need, hide what you don't.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-                <Button asChild size="lg" variant="secondary" className="h-14 px-8 text-lg font-semibold w-full sm:w-auto">
-                  <Link href="/signup">Get Started Now</Link>
-                </Button>
-              </div>
+            </div>
+
+            <BentoGrid className="max-w-6xl mx-auto">
+              {/* Payroll */}
+              <BentoGridItem
+                title="Payroll & HR"
+                description="Managing your team shouldn't be a headache. Automate specialized payroll runs, manage comprehensive employee profiles, and issue payslips in seconds."
+                header={<div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20" />}
+                icon={<CreditCard className="h-8 w-8 text-blue-500" />}
+                className="md:col-span-1"
+              />
+
+              {/* Security - Featured Large Item */}
+              <BentoGridItem
+                title="Security & Patrols"
+                description="Advanced guard management with GPS-tracked patrols, QR code checkpoints, and real-time incident reporting directly from the field."
+                header={<div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20" />}
+                icon={<ShieldCheck className="h-8 w-8 text-purple-500" />}
+                className="md:col-span-2"
+              />
+
+              {/* CRM - Featured Large Item */}
+              <BentoGridItem
+                title="CRM & Sales"
+                description="Track every client interaction. Schedule recurring visits, manage leads, and ensure your sales team is always at the right place at the right time."
+                header={<div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-orange-500/20 to-rose-500/20" />}
+                icon={<Users className="h-8 w-8 text-orange-500" />}
+                className="md:col-span-2"
+              />
+
+              {/* Operations */}
+              <BentoGridItem
+                title="Operations & Forms"
+                description="The core of your business. Build custom forms with AI, track inventory, and manage audits with ease."
+                header={<div className="flex flex-1 w-full h-full min-h-[6rem] rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20" />}
+                icon={<LayoutDashboard className="h-8 w-8 text-green-500" />}
+                className="md:col-span-1"
+              />
+            </BentoGrid>
+
+          </div>
+        </section>
+
+        {/* --- COMPARISON / PRICING --- */}
+        <section id="pricing" className="py-24 bg-slate-50 dark:bg-slate-900/50">
+          <div className="container">
+            <div className="flex flex-col items-center justify-center text-center mb-16 space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">Transparent Pricing</h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400">Choose the plan that fits your scale.</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Basic */}
+              <PricingCard
+                name="Starter"
+                price="$0"
+                description="For small teams just getting started."
+                features={['1 Admin User', 'Mobile App Access', 'Basic Forms', 'Up to 5 Team Members']}
+              />
+              {/* Pro */}
+              <PricingCard
+                name="Professional"
+                price="$29"
+                period="/mo"
+                description="For growing businesses needing automation."
+                popular
+                features={['Unlimited Admins', 'All Modules Available', 'Advanced Automations', 'Priority Support', '50GB Storage']}
+              />
+              {/* Enterprise */}
+              <PricingCard
+                name="Enterprise"
+                price="Custom"
+                description="For large organizations with custom needs."
+                features={['Dedicated Success Manager', 'Custom Integrations', 'SLA Guarantee', 'On-premise Deployment Options', '24/7 Phone Support']}
+              />
             </div>
           </div>
         </section>
+
+        {/* --- FINAL CTA --- */}
+        <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20"></div>
+
+          <div className="container relative z-10 flex flex-col items-center text-center">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to transform your operations?</h2>
+            <p className="text-xl text-slate-300 max-w-2xl mb-10">
+              Join thousands of companies using WorkforceOne to streamline their field operations.
+              Start your 14-day free trial today.
+            </p>
+            <Button asChild size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-slate-900 hover:bg-slate-100 hover:text-blue-600 transition-colors">
+              <Link href="/signup">Get Started for Free</Link>
+            </Button>
+          </div>
+        </section>
+
       </main>
 
-      {/* --- FOOTER --- */}
-      <footer className="border-t bg-slate-50 dark:bg-slate-950">
-        <div className="container py-12 md:py-16 lg:py-24">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="col-span-2 md:col-span-1 space-y-4">
-              <h3 className="text-lg font-bold flex items-center gap-2"><Globe className="h-5 w-5 text-primary" /> WorkforceOne</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                The all-in-one platform for modern field operations. Built for speed, scale, and security.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#features" className="hover:text-primary">Features</Link></li>
-                <li><Link href="#pricing" className="hover:text-primary">Pricing</Link></li>
-                <li><Link href="/changelog" className="hover:text-primary">Changelog</Link></li>
-                <li><Link href="/roadmap" className="hover:text-primary">Roadmap</Link></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Resources</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/docs" className="hover:text-primary">Documentation</Link></li>
-                <li><Link href="/blog" className="hover:text-primary">Blog</Link></li>
-                <li><Link href="/community" className="hover:text-primary">Community</Link></li>
-                <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-foreground uppercase tracking-wider">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/about" className="hover:text-primary">About</Link></li>
-                <li><Link href="/careers" className="hover:text-primary">Careers</Link></li>
-                <li><Link href="/legal" className="hover:text-primary">Legal</Link></li>
-                <li><Link href="/contact" className="hover:text-primary">Contact</Link></li>
-              </ul>
-            </div>
+      {/* Footer */}
+      <footer className="py-12 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+        <div className="container flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Globe className="w-6 h-6 text-blue-600" />
+            <span className="font-bold text-xl tracking-tight">WorkforceOne</span>
           </div>
-          <div className="border-t mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} WorkforceOne Inc. All rights reserved.</p>
-            <div className="flex gap-6">
-              <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-              <Link href="/terms" className="hover:underline">Terms of Service</Link>
-            </div>
+          <div className="text-sm text-slate-500">
+            &copy; {new Date().getFullYear()} WorkforceOne Inc. All rights reserved.
+          </div>
+          <div className="flex gap-6 text-sm text-slate-600 dark:text-slate-400">
+            <Link href="#" className="hover:text-blue-600">Privacy</Link>
+            <Link href="#" className="hover:text-blue-600">Terms</Link>
+            <Link href="#" className="hover:text-blue-600">Contact</Link>
           </div>
         </div>
       </footer>
@@ -332,40 +277,32 @@ export default async function IndexPage() {
   );
 }
 
-function FeatureCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
+function PricingCard({ name, price, period, description, features, popular }: any) {
   return (
-    <div className="p-6 rounded-2xl bg-card border shadow-sm hover:shadow-md transition-shadow">
-      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-6">
-        <Icon className="h-6 w-6 text-primary" />
-      </div>
-      <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
-    </div>
-  )
-}
-
-function PricingCard({ title, price, period, description, features, cta, popular, href, variant = "outline" }: any) {
-  return (
-    <div className={`relative flex flex-col p-8 rounded-2xl border ${popular ? 'border-primary shadow-2xl scale-105 z-10 bg-background' : 'bg-card shadow-sm'}`}>
-      {popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-full shadow-lg">Most Popular</div>}
-      <div className="mb-8 space-y-2">
-        <h3 className="text-xl font-bold">{title}</h3>
-        <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold">{price}</span>
-          {period && <span className="text-muted-foreground">{period}</span>}
+    <div className={`relative p-8 rounded-2xl border ${popular ? 'border-blue-600 shadow-2xl scale-105 bg-white' : 'border-slate-200 bg-slate-50/50'} flex flex-col h-full`}>
+      {popular && (
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-600 text-white text-sm font-bold rounded-full shadow-lg">
+          Most Popular
         </div>
-        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+      <div className="mb-4">
+        <h3 className="text-xl font-bold text-slate-900">{name}</h3>
+        <p className="text-slate-500 text-sm">{description}</p>
+      </div>
+      <div className="mb-8 flex items-baseline">
+        <span className="text-4xl font-bold text-slate-900">{price}</span>
+        {period && <span className="text-slate-500 ml-1">{period}</span>}
       </div>
       <ul className="space-y-4 mb-8 flex-1">
-        {features.map((feature: string) => (
-          <li key={feature} className="flex items-start gap-3 text-sm">
-            <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+        {features.map((feature: string, i: number) => (
+          <li key={i} className="flex items-center gap-3 text-sm text-slate-700">
+            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
             <span>{feature}</span>
           </li>
         ))}
       </ul>
-      <Button asChild variant={variant as any} className="w-full h-12">
-        <Link href={href}>{cta}</Link>
+      <Button className={`w-full ${popular ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-900 hover:bg-slate-800'}`}>
+        Choose Plan
       </Button>
     </div>
   )

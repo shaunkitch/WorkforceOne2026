@@ -45,6 +45,25 @@ export async function getClients(orgId: string) {
     return clients as Client[];
 }
 
+export async function getClient(orgId: string, clientId: string) {
+    const supabase = createClient();
+
+    // Auth check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: client, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("organization_id", orgId)
+        .eq("id", clientId)
+        .single();
+
+    if (error) return null;
+
+    return client as Client;
+}
+
 export async function createClientAction(orgId: string, data: { name: string; email?: string; phone?: string; address?: string; latitude?: number; longitude?: number }) {
     const supabase = createClient();
 

@@ -30,9 +30,16 @@ export default function FormsPage({ params }: { params: { orgId: string } }) {
 
 async function FormsList({ orgId }: { orgId: string }) {
     const supabase = createClient();
+
+    // Optimized fetch with joined stats
     const { data: forms, error } = await supabase
         .from("forms")
-        .select("*")
+        .select(`
+            *,
+            form_statistics (
+                submission_count
+            )
+        `)
         .eq("organization_id", orgId)
         .order("created_at", { ascending: false });
 
@@ -54,24 +61,9 @@ async function FormsList({ orgId }: { orgId: string }) {
         );
     }
 
-    // Fetch submission counts for each form
-    const formsWithStats = await Promise.all(
-        forms.map(async (form) => {
-            const { count } = await supabase
-                .from("submissions")
-                .select("*", { count: "exact", head: true })
-                .eq("form_id", form.id);
-
-            return {
-                ...form,
-                submission_count: count || 0
-            };
-        })
-    );
-
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {formsWithStats.map((form) => (
+            {forms.map((form: any) => (
                 <Card key={form.id} className="hover:shadow-md transition-shadow">
                     <CardHeader>
                         <div className="flex items-center justify-between">
@@ -92,7 +84,8 @@ async function FormsList({ orgId }: { orgId: string }) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-sm text-muted-foreground">
-                            {form.submission_count} submissions
+                            {/* Handle nested object or fallback */}
+                            {form.form_statistics?.submission_count || 0} submissions
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between">

@@ -94,7 +94,16 @@ function FormComponent({
     defaultValue?: string;
 }) {
     const element = elementInstance as CustomInstance;
-    const [scannedCodes, setScannedCodes] = useState<string[]>(defaultValue ? JSON.parse(defaultValue) : []);
+    const [scannedCodes, setScannedCodes] = useState<string[]>(() => {
+        if (!defaultValue) return [];
+        try {
+            const parsed = JSON.parse(defaultValue);
+            if (Array.isArray(parsed)) return parsed;
+            return [String(parsed)];
+        } catch (e) {
+            return [defaultValue];
+        }
+    });
     const [isScanning, setIsScanning] = useState(false);
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const regionId = `reader-${elementInstance.id}`;

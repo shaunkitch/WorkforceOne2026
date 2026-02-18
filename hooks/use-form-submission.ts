@@ -18,7 +18,14 @@ export function useFormSubmission({
     onSuccess,
     preview = false,
 }: UseFormSubmissionProps) {
-    const formValues = useRef<{ [key: string]: string }>({});
+    const formValues = useRef<{ [key: string]: string }>(
+        content.reduce((acc, field) => {
+            if (field.extraAttributes?.defaultValue !== undefined) {
+                acc[field.id] = String(field.extraAttributes.defaultValue);
+            }
+            return acc;
+        }, {} as { [key: string]: string })
+    );
     const formErrors = useRef<{ [key: string]: boolean }>({});
     const [renderKey, setRenderKey] = useState(new Date().getTime());
     const [submitted, setSubmitted] = useState(false);
@@ -84,7 +91,7 @@ export function useFormSubmission({
         } catch (error) {
             toast({
                 title: "Error",
-                description: "Something went wrong",
+                description: error instanceof Error ? error.message : "Something went wrong",
                 variant: "destructive",
             });
         }
