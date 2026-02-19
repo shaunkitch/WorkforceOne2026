@@ -73,7 +73,12 @@ export default function Dashboard() {
     }
   });
 
-  // ... (Stats Query remains same as it returns number)
+  // 3. Stats derived from queries
+  const stats = {
+    pending: assignmentsData?.count || 0,
+    dueToday: 0,
+    completed: 0
+  };
 
   // 4. Visits Query (Today)
   const { data: visitsData, isLoading: visitsLoading, refetch: refetchVisits } = useQuery({
@@ -117,10 +122,54 @@ export default function Dashboard() {
     }
   });
 
-  // ... (Recent Submissions Query)
+  if (visitsData) {
+    stats.dueToday = visitsData.count;
+  }
+
+  // 5. Recent Submissions Query
+  const { data: recentSubmissionsData, refetch: refetchSubmissions } = useQuery({
+    queryKey: ['recent_submissions', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data } = await supabase
+        .from('form_submissions')
+        .select('id, form_id, created_at, forms(name)')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      return data?.map(s => ({
+        id: s.id,
+        form_id: s.form_id,
+        title: (s.forms as any)?.name || 'Untitled',
+        date: s.created_at
+      })) || [];
+    }
+  });
+
+  const todaysVisits = visitsData?.list || [];
+  const assignedForms = assignmentsData?.list || [];
+  const recentSubmissions = recentSubmissionsData || [];
 
   const [refreshing, setRefreshing] = useState(false);
-  // ...
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refreshOrg(),
+      refetchAssignments(),
+      refetchVisits(),
+      refetchSubmissions()
+    ]);
+    setRefreshing(false);
+  }, [refreshOrg, refetchAssignments, refetchVisits, refetchSubmissions]);
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefresh();
+    }, [onRefresh])
+  );
 
   const handleVisitPress = (visit: Visit) => {
     const client = visit.clients;
