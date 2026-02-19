@@ -25,7 +25,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.workforceone.mobile.v2",
-      "versionCode": 2012,
+      "versionCode": 2014,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
