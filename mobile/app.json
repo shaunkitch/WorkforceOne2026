@@ -3,7 +3,7 @@
     "name": "WorkforceOne",
     "slug": "workforceone-mobile",
     "owner": "shaunkitch",
-    "version": "2.0.3",
+    "version": "2.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "workforceone",
@@ -25,7 +25,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.workforceone.mobile.v2",
-      "versionCode": 2009,
+      "versionCode": 2010,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

@@ -1,9 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/mail";
 import { revalidatePath } from "next/cache";
+import { Team, BankDetails } from "@/types/app";
+import { logAction } from "@/lib/actions/audit";
 
 export async function createTeam(orgId: string, name: string) {
     const supabase = createClient();
@@ -17,8 +18,6 @@ export async function createTeam(orgId: string, name: string) {
 
     revalidatePath(`/dashboard/${orgId}/users/teams`);
 }
-
-import { Team } from "@/types/app";
 
 export async function getTeams(orgId: string): Promise<Team[]> {
     const supabase = createClient();
@@ -34,7 +33,6 @@ export async function getTeams(orgId: string): Promise<Team[]> {
 
 export async function getTeamMembers(teamId: string) {
     const supabase = createClient();
-    // Assuming we can join profiles through user_id
     const { data: members } = await supabase
         .from("team_members")
         .select("*, profiles(*)")
@@ -42,8 +40,6 @@ export async function getTeamMembers(teamId: string) {
 
     return members || [];
 }
-
-import { BankDetails } from "@/types/app";
 
 // Extended User Creation
 export async function createUser(orgId: string, data: {
@@ -60,7 +56,99 @@ export async function createUser(orgId: string, data: {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (!currentUser) throw new Error("Unauthorized");
 
-    // ... (rest of function)
+    // Check permissions (Only admins/owners can create users)
+    const { data: membership } = await supabase
+        .from("organization_members")
+        .select("role")
+        .eq("organization_id", orgId)
+        .eq("user_id", currentUser.id)
+        .single();
+
+    if (!membership || !["owner", "admin"].includes(membership.role)) {
+        throw new Error("Insufficient permissions to create users");
+    }
+
+    const adminSupabase = createAdminClient();
+    const tempPassword = Math.random().toString(36).slice(-10);
+
+    try {
+        // 1. Create User in Auth (Bypassing Email Confirmation)
+        const { data: userData, error: authError } = await adminSupabase.auth.admin.createUser({
+            email: data.email,
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: {
+                full_name: `${data.firstName} ${data.lastName}`
+            }
+        });
+
+        if (authError) throw new Error("Auth Error: " + authError.message);
+        const newUser = userData.user;
+
+        // 2. Generate Employee Number
+        const { data: countData } = await adminSupabase
+            .from("organization_members")
+            .select("id")
+            .eq("organization_id", orgId);
+
+        const empCount = (countData?.length || 0) + 1;
+        const employeeNumber = `EMP-${empCount.toString().padStart(4, '0')}`;
+
+        // 3. Profiles table is handled by trigger handle_new_user()
+        // But we need to update mobile, hourly rate, and bank details which are not in the trigger
+        const { error: profileError } = await adminSupabase
+            .from("profiles")
+            .update({
+                mobile: data.mobile,
+                hourly_rate: data.hourlyRate,
+                bank_details: data.bankDetails
+            })
+            .eq("id", newUser.id);
+
+        if (profileError) throw profileError;
+
+        // 4. Link to Organization
+        const { error: memberError } = await adminSupabase
+            .from("organization_members")
+            .insert({
+                organization_id: orgId,
+                user_id: newUser.id,
+                role: data.role,
+                employee_number: employeeNumber
+            });
+
+        if (memberError) throw memberError;
+
+        // 5. Add to Team if provided
+        if (data.teamId && data.teamId !== "none") {
+            await adminSupabase
+                .from("team_members")
+                .insert({
+                    team_id: data.teamId,
+                    user_id: newUser.id
+                });
+        }
+
+        // 6. Send Welcome Email
+        await sendWelcomeEmail(data.email, `${data.firstName} ${data.lastName}`, tempPassword);
+
+        // 7. Log Action
+        await logAction(
+            orgId,
+            "Created User",
+            `${data.firstName} ${data.lastName}`,
+            { email: data.email, role: data.role, empNo: employeeNumber },
+            { tableName: 'profiles', recordId: newUser.id }
+        );
+
+        revalidatePath(`/dashboard/${orgId}/users`);
+        return { success: true, tempPassword, employeeNumber };
+
+    } catch (error: any) {
+        console.error("Cleanup: failed user creation partially", error);
+        // We might want to delete the auth user if the link failed
+        throw error;
+    }
 }
 
 export async function updateUser(orgId: string, userId: string, data: {
@@ -68,6 +156,7 @@ export async function updateUser(orgId: string, userId: string, data: {
     lastName: string;
     mobile: string;
     email?: string;
+    password?: string;
     role: "admin" | "editor" | "viewer";
     teamId?: string | null;
     hourlyRate?: number;
@@ -98,13 +187,14 @@ export async function updateUser(orgId: string, userId: string, data: {
 
     const adminSupabase = createAdminClient();
 
-    // 1. Update Auth Email (if changed)
-    if (data.email) {
-        const { error: authError } = await adminSupabase.auth.admin.updateUserById(userId, {
-            email: data.email,
-            email_confirm: true
-        });
-        if (authError) throw new Error("Failed to update auth email: " + authError.message);
+    // 1. Update Auth (Email/Password)
+    const authUpdates: any = { email_confirm: true };
+    if (data.email) authUpdates.email = data.email;
+    if (data.password) authUpdates.password = data.password;
+
+    if (data.email || data.password) {
+        const { error: authError } = await adminSupabase.auth.admin.updateUserById(userId, authUpdates);
+        if (authError) throw new Error("Failed to update auth: " + authError.message);
     }
 
     const { error: profileError } = await adminSupabase
@@ -144,7 +234,7 @@ export async function updateUser(orgId: string, userId: string, data: {
         orgId,
         "Updated User Profile",
         `${data.firstName} ${data.lastName}`,
-        { email: data.email, role: data.role },
+        { email: data.email, role: data.role, passwordChanged: !!data.password },
         {
             tableName: 'profiles',
             recordId: userId,
@@ -163,15 +253,11 @@ export async function updateUser(orgId: string, userId: string, data: {
     return { success: true };
 }
 
-import { logAction } from "@/lib/actions/audit";
-
 export async function bulkCreateUsers(orgId: string, users: any[]) {
-    // Validate permission once
     const supabase = createClient();
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (!currentUser) throw new Error("Unauthorized");
 
-    // Check permissions
     const { data: membership } = await supabase
         .from("organization_members")
         .select("role")
@@ -189,7 +275,6 @@ export async function bulkCreateUsers(orgId: string, users: any[]) {
         errors: [] as string[]
     };
 
-    // Process sequentially to avoid rate limits
     for (const u of users) {
         try {
             await createUser(orgId, {
@@ -198,7 +283,7 @@ export async function bulkCreateUsers(orgId: string, users: any[]) {
                 email: u.email,
                 mobile: u.mobile || "",
                 role: u.role || "viewer",
-                teamId: u.teamId // Optional
+                teamId: u.teamId
             });
             results.success++;
         } catch (e: any) {
@@ -217,7 +302,6 @@ export async function removeUser(orgId: string, userId: string) {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (!currentUser) throw new Error("Unauthorized");
 
-    // Check permissions (Only admins/owners/editors?) - Usually admins/owners
     const { data: membership } = await supabase
         .from("organization_members")
         .select("role")
@@ -229,14 +313,6 @@ export async function removeUser(orgId: string, userId: string) {
         throw new Error("Insufficient permissions to remove users");
     }
 
-    // Prevent removing self?
-    if (currentUser.id === userId) {
-        // Check if they are the only owner?
-        // For now, allow leaving, but UI might warn.
-        // Actually, if I remove myself, I lose access. Safe enough.
-    }
-
-    // Delete from organziation_members
     const { error } = await supabase
         .from("organization_members")
         .delete()

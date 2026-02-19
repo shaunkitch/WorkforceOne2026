@@ -401,6 +401,8 @@ export function EditUserDialog({ orgId, user, currency }: { orgId: string, user:
     const [accountNumber, setAccountNumber] = useState("");
     const [iban, setIban] = useState("");
 
+    const [password, setPassword] = useState("");
+
     const splitName = (fullName: string) => {
         const parts = (fullName || "").split(' ');
         return {
@@ -419,6 +421,7 @@ export function EditUserDialog({ orgId, user, currency }: { orgId: string, user:
             setMobile(user.profiles?.mobile || "");
             setRole(user.role);
             setHourlyRate(user.profiles?.hourly_rate?.toString() || "0");
+            setPassword(""); // Reset password field on open
 
             const bank = user.profiles?.bank_details || {};
             setBankName(bank.bankName || "");
@@ -439,6 +442,7 @@ export function EditUserDialog({ orgId, user, currency }: { orgId: string, user:
                     lastName,
                     email,
                     mobile,
+                    password: password || undefined, // Send if entered
                     role,
                     teamId: teamId === "none" ? null : teamId,
                     hourlyRate: parseFloat(hourlyRate),
@@ -478,6 +482,16 @@ export function EditUserDialog({ orgId, user, currency }: { orgId: string, user:
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Email</label>
                         <Input value={email} onChange={e => setEmail(e.target.value)} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">New Password (Optional)</label>
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder="Leave blank to keep current"
+                        />
                     </div>
 
                     <div className="space-y-2">
