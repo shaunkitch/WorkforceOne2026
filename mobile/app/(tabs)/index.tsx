@@ -14,7 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Visit } from '@/types/app';
 
 export default function Dashboard() {
-  const { org, isOnline, unreadCount, features, refreshOrg } = useOrg();
+  const { org, isOnline, unreadCount, features, refreshOrg, loading } = useOrg();
   const queryClient = useQueryClient();
 
   // 1. User Profile Query
