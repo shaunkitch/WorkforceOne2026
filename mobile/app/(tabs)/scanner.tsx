@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Button, Alert, TouchableOpacity, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { StyleSheet, Text, View, Alert, TouchableOpacity, ActivityIndicator, TextInput, Modal } from 'react-native';
 import { Camera, CameraView, useCameraPermissions } from 'expo-camera';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
+import { useOrg } from '@/contexts/OrgContext';
 
 export default function ScannerScreen() {
+    const { org } = useOrg();
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -13,16 +16,21 @@ export default function ScannerScreen() {
     const [newQuantity, setNewQuantity] = useState('');
 
     if (!permission) {
-        // Camera permissions are still loading
-        return <View />;
+        return <View className="flex-1 bg-slate-900" />;
     }
 
     if (!permission.granted) {
-        // Camera permissions are not granted yet
         return (
-            <View style={styles.container}>
-                <Text style={{ textAlign: 'center' }}>We need your permission to show the camera</Text>
-                <Button onPress={requestPermission} title="grant permission" />
+            <View className="flex-1 justify-center items-center bg-slate-50 px-6">
+                <Ionicons name="camera-outline" size={64} color="#64748b" />
+                <Text className="text-lg font-bold text-slate-800 mt-4 text-center">Camera Access Required</Text>
+                <Text className="text-slate-500 text-center mt-2 mb-8">We need your permission to scan barcodes and QR codes.</Text>
+                <TouchableOpacity
+                    className="bg-blue-600 px-8 py-4 rounded-xl"
+                    onPress={requestPermission}
+                >
+                    <Text className="text-white font-bold">Grant Permission</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -85,7 +93,9 @@ export default function ScannerScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View className="flex-1 bg-black">
+            <StatusBar style="light" />
+
             <CameraView
                 style={StyleSheet.absoluteFillObject}
                 facing="back"
@@ -95,19 +105,35 @@ export default function ScannerScreen() {
                 }}
             />
 
-            <View style={styles.overlay}>
-                <View style={styles.scanFrame} />
-                <Text style={styles.helpText}>Align QR code or Barcode within the frame</Text>
+            {/* Header Overlay */}
+            <LinearGradient
+                colors={['rgba(0,0,0,0.8)', 'transparent']}
+                className="pt-16 pb-20 px-6 absolute top-0 left-0 right-0 z-10"
+            >
+                <Text className="text-white text-3xl font-bold">Scanner</Text>
+                <Text className="text-slate-300 text-sm font-medium">Scan assets or locations</Text>
+            </LinearGradient>
+
+            <View className="flex-1 justify-center items-center">
+                <View className="w-64 h-64 border-2 border-white/50 rounded-3xl" />
+                <Text className="text-white font-medium mt-6 bg-black/40 px-4 py-2 rounded-full overflow-hidden">
+                    Align code within the frame
+                </Text>
 
                 {scanned && !modalVisible && !loading && (
-                    <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />
+                    <TouchableOpacity
+                        className="mt-8 bg-white/20 px-6 py-3 rounded-xl border border-white/30"
+                        onPress={() => setScanned(false)}
+                    >
+                        <Text className="text-white font-bold">Tap to Scan Again</Text>
+                    </TouchableOpacity>
                 )}
             </View>
 
             {loading && (
-                <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#2563eb" />
-                    <Text style={{ color: 'white', marginTop: 10 }}>Searching...</Text>
+                <View className="absolute inset-0 bg-black/60 items-center justify-center">
+                    <ActivityIndicator size="large" color="#white" />
+                    <Text className="text-white font-bold mt-4">Searching Inventory...</Text>
                 </View>
             )}
 
