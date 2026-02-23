@@ -4,13 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-        'Missing Supabase environment variables.\n' +
-        'Ensure EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY are set in your .env file.'
+    // Log a warning but do NOT throw — a module-level throw crashes the entire
+    // JS bundle before SplashScreen.hideAsync() can run, freezing the splash screen.
+    // The app will fail gracefully at the auth step instead.
+    console.warn(
+        '[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY.\n' +
+        'Check your .env file and EAS environment variable configuration.'
     );
 }
 

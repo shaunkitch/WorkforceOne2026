@@ -25,9 +25,22 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.workforceone.mobile.v2",
-      "versionCode": 2014,
+      "versionCode": 2030,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.INTERNET",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "output": "static",
@@ -47,23 +60,25 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2563eb",
+          "androidMode": "default",
+          "androidCollapsedTitle": "WorkforceOne"
+        }
+      ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
       "eas": {
         "projectId": "d4dc2b0f-914b-47c1-8af1-4725205fc80e"
       }
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/d4dc2b0f-914b-47c1-8af1-4725205fc80e"
     }
   }
 }

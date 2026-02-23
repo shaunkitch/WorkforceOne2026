@@ -52,8 +52,14 @@ export const createAdminClient = cache(() => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.warn('Missing Supabase Service Role environment variables');
+  if (!supabaseServiceKey) {
+    // This makes the error obvious in Vercel logs rather than a cryptic 401/403
+    // from Supabase auth.admin.* calls masking as a generic Server Component error.
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set. ' +
+      'Add it to your Vercel Environment Variables (Settings → Environment Variables). ' +
+      'Find it in your Supabase project: Settings → API → service_role secret.'
+    );
   }
 
   return createClient<Database>(

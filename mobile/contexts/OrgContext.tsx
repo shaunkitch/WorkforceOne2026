@@ -6,7 +6,18 @@ import { Session } from '@supabase/supabase-js';
 import { offlineStore } from '../lib/offline-store';
 import NetInfo from '@react-native-community/netinfo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Organization, Notification } from '../../types/app';
+import { Organization } from '../../types/app';
+
+// Use a local type to avoid clashing with the global `Notification` browser type
+type AppNotification = {
+    id: string;
+    user_id: string;
+    title: string;
+    message: string;
+    is_read: boolean;
+    created_at: string;
+    [key: string]: any;
+};
 
 // Helper type for features (Json in DB, but usually an object in app)
 type FeatureFlags = Record<string, any>;
@@ -17,7 +28,7 @@ type OrgContextType = {
     loading: boolean;
     isOnline: boolean;
     roleMetadata: Record<string, any>;
-    notifications: Notification[];
+    notifications: AppNotification[];
     unreadCount: number;
     refreshOrg: () => Promise<void>;
     markNotificationRead: (id: string) => Promise<void>;
@@ -41,25 +52,14 @@ export const useOrg = () => useContext(OrgContext);
 
 const ORG_CACHE_KEY = '@workforceone_org_cache';
 
-export function OrgProvider({ children }: { children: React.ReactNode }) {
-    const [session, setSession] = useState<Session | null>(null);
+// Session is passed from _layout.tsx (single source of truth for auth)
+export function OrgProvider({ children, session }: { children: React.ReactNode; session: Session | null }) {
     const [isOnline, setIsOnline] = useState(true);
     const [isAppActive, setIsAppActive] = useState(true);
     const queryClient = useQueryClient();
 
-    // Initial Auth Listener
+    // Network & AppState listeners — run once only, no auth listener here
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                setSession(session);
-                if (session) {
-                    queryClient.invalidateQueries({ queryKey: ['org'] });
-                    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-                }
-            }
-        );
-
-        // Network Listener
         const unsubscribeNetInfo = NetInfo.addEventListener(state => {
             const online = !!state.isConnected && !!state.isInternetReachable;
             setIsOnline(online);
@@ -68,17 +68,27 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
             }
         });
 
-        // AppState Listener
         const subscriptionAppState = AppState.addEventListener('change', nextAppState => {
             setIsAppActive(nextAppState === 'active');
         });
 
         return () => {
-            subscription.unsubscribe();
             unsubscribeNetInfo();
             subscriptionAppState.remove();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only register once — session ref used inside is via closure
+
+    // When session changes, invalidate queries so data refreshes for the new user
+    useEffect(() => {
+        if (session) {
+            queryClient.invalidateQueries({ queryKey: ['org'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        } else {
+            // Logged out — clear cached data
+            queryClient.clear();
         }
-    }, [session]);
+    }, [session, queryClient]);
 
     // Query: Organization
     const { data: orgData, isLoading: orgLoading, refetch: refetchOrgQuery } = useQuery({
@@ -86,8 +96,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
         queryFn: async () => {
             if (!session?.user?.id) return null;
 
-            // Try fetch from DB
-            const { data, error } = await supabase
+            const { data: rawData, error } = await supabase
                 .from('organization_members')
                 .select('metadata, organizations(id, name, slug, brand_color, logo_url, app_logo_url, features)')
                 .eq('user_id', session.user.id)
@@ -95,8 +104,10 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
             if (error) throw error;
 
-            if (data && data.organizations) {
-                // @ts-ignore - Supabase types join
+            // Cast to `any` to work around Supabase TS codegen issues with joined tables
+            const data = rawData as any;
+
+            if (data?.organizations) {
                 const org = data.organizations as Organization;
                 const metadata = data.metadata || {};
 
@@ -108,8 +119,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
             return null;
         },
         enabled: !!session?.user?.id && isOnline,
-        // Place holder data from async storage could be implemented here but simpler to just use stale time
-        staleTime: 1000 * 60 * 60, // 1 hour (Org data doesn't change often)
+        staleTime: 1000 * 60 * 60, // 1 hour
     });
 
     // Query: Notifications
@@ -123,29 +133,28 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
                 .eq('user_id', session.user.id)
                 .order('created_at', { ascending: false })
                 .limit(20);
-            return data || [];
+            return (data || []) as AppNotification[];
         },
         enabled: !!session?.user?.id,
-        refetchInterval: isAppActive ? 30000 : false, // Poll every 30s only when active
+        refetchInterval: isAppActive ? 30000 : false,
     });
 
     // Mutation: Mark Read
     const markReadMutation = useMutation({
         mutationFn: async (id: string) => {
-            await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+            await (supabase.from('notifications') as any).update({ is_read: true }).eq('id', id);
         },
         onMutate: async (id) => {
-            // Optimistic Update
             await queryClient.cancelQueries({ queryKey: ['notifications', session?.user?.id] });
             const previousNotifications = queryClient.getQueryData(['notifications', session?.user?.id]);
 
-            queryClient.setQueryData(['notifications', session?.user?.id], (old: Notification[] | undefined) => {
-                return old ? old.map(n => n.id === id ? { ...n, is_read: true } : n) : [];
+            queryClient.setQueryData(['notifications', session?.user?.id], (old: any) => {
+                return old ? old.map((n: any) => n.id === id ? { ...n, is_read: true } : n) : [];
             });
 
             return { previousNotifications };
         },
-        onError: (err, newTodo, context) => {
+        onError: (_err, _id, context) => {
             if (context?.previousNotifications) {
                 queryClient.setQueryData(['notifications', session?.user?.id], context.previousNotifications);
             }
@@ -159,15 +168,15 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
     const markAllReadMutation = useMutation({
         mutationFn: async () => {
             if (session?.user?.id) {
-                await supabase.from('notifications').update({ is_read: true }).eq('user_id', session.user.id);
+                await (supabase.from('notifications') as any).update({ is_read: true }).eq('user_id', session.user.id);
             }
         },
         onMutate: async () => {
             await queryClient.cancelQueries({ queryKey: ['notifications', session?.user?.id] });
             const previousNotifications = queryClient.getQueryData(['notifications', session?.user?.id]);
 
-            queryClient.setQueryData(['notifications', session?.user?.id], (old: Notification[] | undefined) => {
-                return old ? old.map(n => ({ ...n, is_read: true })) : [];
+            queryClient.setQueryData(['notifications', session?.user?.id], (old: any) => {
+                return old ? old.map((n: any) => ({ ...n, is_read: true })) : [];
             });
 
             return { previousNotifications };
@@ -176,7 +185,6 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
             queryClient.invalidateQueries({ queryKey: ['notifications', session?.user?.id] });
         }
     });
-
 
     // Hydrate from local storage on mount (Cold start offline support)
     const [offlineOrgData, setOfflineOrgData] = useState<{ org: Organization, roleMetadata: Record<string, any> } | null>(null);
@@ -195,14 +203,12 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     // Derived State
-    // Use Query data if available, otherwise fallback to offline cache
     const activeOrg = orgData?.org || offlineOrgData?.org || null;
     const activeRoleMetadata = orgData?.roleMetadata || offlineOrgData?.roleMetadata || {};
-    const features = activeOrg?.features || {};
+    const features = (activeOrg?.features || {}) as FeatureFlags;
 
-    const notifications = notificationsData || [];
-    const unreadCount = notifications.filter((n: Notification) => !n.is_read).length;
-
+    const notifications = (notificationsData || []) as AppNotification[];
+    const unreadCount = notifications.filter((n) => !n.is_read).length;
 
     const refreshOrg = async () => {
         await refetchOrgQuery();
@@ -213,7 +219,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
         <OrgContext.Provider value={{
             org: activeOrg,
             features,
-            loading: orgLoading && !offlineOrgData, // Only show loading if no cache AND query is loading
+            loading: orgLoading && !offlineOrgData,
             isOnline,
             roleMetadata: activeRoleMetadata,
             notifications,

@@ -1,0 +1,5 @@
+# Exclude these from EAS build archive
+android/
+ios/
+__tests__/
+.git/
