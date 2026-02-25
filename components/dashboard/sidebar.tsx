@@ -10,18 +10,22 @@ import {
     Database,
     Users,
     BarChart3,
+    BarChart2,
     Clock,
     Banknote,
     MapPin,
     Package,
     Briefcase,
     CalendarDays,
-
+    Calendar,
     Receipt,
     ShieldCheck,
     AlertTriangle,
     ScanLine,
-    ClipboardList
+    ClipboardList,
+    GitBranch,
+    PieChart,
+    ClipboardCheck,
 } from "lucide-react";
 
 const routes = [
@@ -146,6 +150,12 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne", 
                     label: "Clients",
                     icon: Briefcase,
                     href: "/clients",
+                    exact: true,
+                },
+                {
+                    label: "Pipeline",
+                    icon: GitBranch,
+                    href: "/clients/pipeline",
                 },
                 {
                     label: "Quotes",
@@ -174,9 +184,45 @@ export function Sidebar({ orgId, brandColor, logoUrl, orgName = "WorkforceOne", 
                     href: "/hr/timesheet",
                 },
                 {
+                    label: "Attendance Analytics",
+                    icon: BarChart2,
+                    href: "/hr/attendance",
+                },
+                {
+                    label: "Anomaly Detection",
+                    icon: AlertTriangle,
+                    href: "/hr/anomalies",
+                },
+                {
+                    label: "Expenses",
+                    icon: Receipt,
+                    href: "/hr/expenses",
+                },
+                {
+                    label: "Leave Management",
+                    icon: Calendar,
+                    href: "/hr/leave",
+                },
+                {
                     label: "Payroll",
                     icon: Banknote,
                     href: "/hr/payroll",
+                    exact: true,
+                },
+                {
+                    label: "Payroll Analytics",
+                    icon: PieChart,
+                    href: "/hr/payroll/analytics",
+                },
+            ]
+        },
+        {
+            label: "Compliance",
+            routes: [
+                {
+                    label: "Compliance Report",
+                    icon: ClipboardCheck,
+                    href: "/compliance",
                 },
             ]
         },

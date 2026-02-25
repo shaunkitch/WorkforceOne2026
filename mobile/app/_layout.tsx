@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import * as SplashScreen from 'expo-splash-screen';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as BackgroundFetch from 'expo-background-fetch';
@@ -14,6 +15,17 @@ import * as TaskManager from 'expo-task-manager';
 import { offlineStore } from '../lib/offline-store';
 
 const BACKGROUND_SYNC_TASK = 'workforce-background-sync';
+
+// Configure how notifications appear when app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
   try {
@@ -82,6 +94,17 @@ export default function RootLayout() {
 
     initAuth();
 
+    // Request push notification permissions once on startup
+    Notifications.requestPermissionsAsync().catch(() => { });
+
+    // Deep link: tap a notification -> navigate to security tab
+    const notificationSub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.screen) {
+        router.push(data.screen);
+      }
+    });
+
     // Register Background Fetch
     BackgroundFetch.registerTaskAsync(BACKGROUND_SYNC_TASK, {
       minimumInterval: 15 * 60, // 15 minutes
@@ -99,6 +122,7 @@ export default function RootLayout() {
     return () => {
       clearTimeout(splashTimeout);
       subscription.unsubscribe();
+      notificationSub.remove();
     };
   }, []); // ← empty deps: only run once, no re-subscription loops
 

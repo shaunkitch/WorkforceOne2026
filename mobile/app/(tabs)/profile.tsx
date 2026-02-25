@@ -164,6 +164,10 @@ export default function Profile() {
                 <MenuItem icon="notifications-outline" label="Notifications" onPress={() => router.push('/notifications')} />
                 <MenuItem icon="lock-closed-outline" label="Security" onPress={() => Alert.alert("Coming Soon", "Security settings will be available in a future update.")} />
 
+                <Text className="text-slate-500 font-bold mb-4 mt-6 ml-2 uppercase text-xs tracking-wider">HR & Compliance</Text>
+                <MenuItem icon="cash-outline" label="My Payslips" onPress={() => Linking.openURL(`https://workforceone.app/dashboard/${org?.id}/hr/payroll/analytics`)} />
+                <MenuItem icon="shield-checkmark-outline" label="My Compliance" onPress={() => Linking.openURL(`https://workforceone.app/dashboard/${org?.id}/compliance`)} />
+
                 <Text className="text-slate-500 font-bold mb-4 mt-6 ml-2 uppercase text-xs tracking-wider">Support</Text>
                 <MenuItem icon="help-circle-outline" label="Help & Support" onPress={handleSupport} />
                 <MenuItem icon="information-circle-outline" label="About App" onPress={() => setShowAbout(true)} />

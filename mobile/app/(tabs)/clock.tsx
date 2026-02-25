@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '@/lib/supabase';
+import { offlineStore } from '@/lib/offline-store';
+import { useGeofenceGuard } from '@/hooks/use-geofence-guard';
 import { Ionicons } from '@expo/vector-icons';
 import { useOrg } from '@/contexts/OrgContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 // Simple Haversine implementation if geolib not available
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -24,7 +28,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 export default function ClockScreen() {
-    const { org } = useOrg(); // Get current org
+    const { org, isOnline } = useOrg();
     const [location, setLocation] = useState<Location.LocationObject | null>(null);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [sites, setSites] = useState<any[]>([]);
@@ -34,6 +38,16 @@ export default function ClockScreen() {
     const [clocking, setClocking] = useState(false);
     const [currentEntry, setCurrentEntry] = useState<any | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Geofence departure alerts — fires local notification + Supabase alert
+    // when a clocked-in guard leaves the site's radius
+    useGeofenceGuard({
+        activeSite: nearestSite && nearestSite.latitude && nearestSite.longitude
+            ? { id: nearestSite.id, name: nearestSite.name, latitude: nearestSite.latitude, longitude: nearestSite.longitude, radius: nearestSite.radius }
+            : null,
+        isClockedIn: !!currentEntry,
+        orgId: org?.id,
+    });
 
     // Initial Load
     useEffect(() => {
@@ -146,6 +160,28 @@ export default function ClockScreen() {
 
     const handleClockAction = async () => {
         if (clocking) return;
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // --- 🔒 Biometric Authentication ---
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (hasHardware && isEnrolled) {
+            const authResult = await LocalAuthentication.authenticateAsync({
+                promptMessage: currentEntry ? 'Authenticate to Clock Out' : 'Authenticate to Clock In',
+                fallbackLabel: 'Use Passcode',
+                disableDeviceFallback: false,
+                cancelLabel: 'Cancel'
+            });
+
+            if (!authResult.success) {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                // User cancelled or failed auth
+                return;
+            }
+        }
+        // -----------------------------------
+
         setClocking(true);
 
         try {
@@ -154,15 +190,28 @@ export default function ClockScreen() {
 
             if (currentEntry) {
                 // CLOCK OUT
-                const { error } = await supabase
+                if (!isOnline) {
+                    // Queue for later sync
+                    await offlineStore.addToOutbox({
+                        type: 'CLOCK_OUT',
+                        payload: {
+                            entry_id: currentEntry.id,
+                            clock_out: new Date().toISOString(),
+                        },
+                    });
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert('Saved Offline', 'Clock-out saved. It will sync when you\'re back online.');
+                    setCurrentEntry(null);
+                    return;
+                }
+
+                const { error } = await (supabase as any)
                     .from('time_entries')
-                    .update({
-                        clock_out: new Date().toISOString(),
-                        // Optionally calculated duration DB trigger or here
-                    })
+                    .update({ clock_out: new Date().toISOString() })
                     .eq('id', currentEntry.id);
 
                 if (error) throw error;
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert("Success", "Clocked Out!");
                 setCurrentEntry(null);
 
@@ -174,27 +223,40 @@ export default function ClockScreen() {
                     return;
                 }
                 if (distanceToSite! > nearestSite.radius) {
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                     Alert.alert("Outside Geofence", `You are ${Math.round(distanceToSite!)}m away from ${nearestSite.name}. Must be within ${nearestSite.radius}m.`);
                     return;
                 }
 
-                const { data, error } = await supabase
+                const clockInPayload = {
+                    user_id: (await supabase.auth.getUser()).data.user!.id,
+                    organization_id: nearestSite.organization_id,
+                    clock_in: new Date().toISOString(),
+                    location: {
+                        latitude: location?.coords.latitude,
+                        longitude: location?.coords.longitude,
+                        accuracy: location?.coords.accuracy,
+                    },
+                    notes: `Clocked in at ${nearestSite.name}`,
+                };
+
+                if (!isOnline) {
+                    await offlineStore.addToOutbox({ type: 'CLOCK_IN', payload: clockInPayload });
+                    // Create a temporary local entry so the UI reflects clocked-in state
+                    setCurrentEntry({ id: `offline_${Date.now()}`, clock_in: clockInPayload.clock_in });
+                    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert('Saved Offline', `Clock-in at ${nearestSite.name} saved. It will sync when you\'re back online.`);
+                    return;
+                }
+
+                const { data, error } = await (supabase as any)
                     .from('time_entries')
-                    .insert({
-                        user_id: user.id,
-                        organization_id: nearestSite.organization_id, // Important
-                        clock_in: new Date().toISOString(),
-                        location: {
-                            latitude: location?.coords.latitude,
-                            longitude: location?.coords.longitude,
-                            accuracy: location?.coords.accuracy
-                        },
-                        notes: `Clocked in at ${nearestSite.name}`
-                    })
+                    .insert(clockInPayload)
                     .select()
                     .single();
 
                 if (error) throw error;
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 Alert.alert("Success", `Clocked In at ${nearestSite.name}!`);
                 setCurrentEntry(data);
             }
@@ -275,6 +337,9 @@ export default function ClockScreen() {
                         ${currentEntry ? 'bg-red-500 shadow-red-500/20' : 'bg-blue-600 shadow-blue-600/20'}
                     `}
                     onPress={handleClockAction}
+                    accessibilityRole="button"
+                    accessibilityLabel={currentEntry ? 'Clock Out' : 'Clock In'}
+                    accessibilityHint="Double tap to record your attendance"
                 >
                     {clocking ? (
                         <ActivityIndicator color="white" />

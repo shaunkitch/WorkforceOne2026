@@ -829,11 +829,13 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- Policies
+DROP POLICY IF EXISTS "Users can view their own notifications" ON public.notifications;
 CREATE POLICY "Users can view their own notifications"
     ON public.notifications
     FOR SELECT
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own notifications (mark as read)" ON public.notifications;
 CREATE POLICY "Users can update their own notifications (mark as read)"
     ON public.notifications
     FOR UPDATE
@@ -1071,17 +1073,26 @@ ADD COLUMN IF NOT EXISTS completed_at timestamptz;
 
 
 -- --- APPENDED FROM fix_submissions_profiles_fk.sql ---
--- Add explicit FK to profiles for easy joining
--- This assumes profiles.id is the user_id (same as auth.users.id)
-ALTER TABLE submissions
-ADD CONSTRAINT fk_submissions_profiles
-FOREIGN KEY (user_id)
-REFERENCES profiles(id)
-ON DELETE SET NULL;
+-- Add explicit FK to profiles for easy joining (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_submissions_profiles'
+      AND table_name = 'submissions'
+  ) THEN
+    ALTER TABLE submissions
+    ADD CONSTRAINT fk_submissions_profiles
+    FOREIGN KEY (user_id)
+    REFERENCES profiles(id)
+    ON DELETE SET NULL;
+  END IF;
+END $$;
 
 
 -- --- APPENDED FROM fix_notifications_rls.sql ---
 -- Allow users (admins/system) to insert notifications for others
+DROP POLICY IF EXISTS "Users can insert notifications" ON public.notifications;
 CREATE POLICY "Users can insert notifications"
     ON public.notifications
     FOR INSERT

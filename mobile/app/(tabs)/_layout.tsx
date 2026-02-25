@@ -9,7 +9,7 @@ import { useOrg } from '@/contexts/OrgContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { org, features, loading, roleMetadata } = useOrg();
+  const { org, features, loading, roleMetadata, unreadCount } = useOrg();
 
   const brandColor = org?.brand_color || '#2563eb';
 
@@ -31,6 +31,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <Ionicons size={28} name="home" color={color} />,
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
         }}
       />
 

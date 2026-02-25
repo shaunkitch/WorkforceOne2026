@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetBackdrop, BottomSheetView } from '@gorhom/
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useOrg } from '@/contexts/OrgContext';
@@ -30,7 +31,7 @@ export default function Dashboard() {
   const snapPoints = useMemo(() => ['40%'], []);
 
   const handlePresentModalPress = useCallback(() => {
-    console.log("Presenting bottom sheet modal!");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     bottomSheetModalRef.current?.present();
   }, []);
 
@@ -256,7 +257,12 @@ export default function Dashboard() {
           </View>
           <TouchableOpacity
             className="bg-white/20 p-2 rounded-full backdrop-blur-sm relative"
-            onPress={() => router.push('/notifications')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/notifications');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
           >
             <Ionicons name="notifications-outline" size={24} color="white" />
             {(unreadCount > 0 || !isOnline) && (
@@ -289,7 +295,9 @@ export default function Dashboard() {
       >
         {/* Quick Actions */}
         <View className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex-row justify-between items-center">
-          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={handlePresentModalPress}>
+          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={handlePresentModalPress}
+            accessibilityRole="button" accessibilityLabel="Create new entry"
+          >
             <View className="w-12 h-12 bg-blue-50 rounded-full items-center justify-center">
               <Ionicons name="add" size={24} color="#2563eb" />
             </View>
@@ -298,17 +306,41 @@ export default function Dashboard() {
 
           <View className="w-[1px] h-10 bg-slate-100" />
 
-          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => router.push('/(tabs)/tasks')}>
+          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/(tabs)/tasks');
+          }}
+            accessibilityRole="button" accessibilityLabel="View my tasks"
+          >
             <View className="w-12 h-12 bg-indigo-50 rounded-full items-center justify-center">
               <Ionicons name="checkbox" size={22} color="#4f46e5" />
             </View>
             <Text className="text-xs font-semibold text-slate-600">Tasks</Text>
           </TouchableOpacity>
 
+          <View className="w-[1px] h-10 bg-slate-100" />
+
+          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/(tabs)/expenses');
+          }}
+            accessibilityRole="button" accessibilityLabel="Submit Expense"
+          >
+            <View className="w-12 h-12 bg-amber-50 rounded-full items-center justify-center">
+              <Ionicons name="receipt" size={22} color="#d97706" />
+            </View>
+            <Text className="text-xs font-semibold text-slate-600">Expense</Text>
+          </TouchableOpacity>
+
           {(features?.security) && (
             <>
               <View className="w-[1px] h-10 bg-slate-100" />
-              <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => console.log('Scan')}>
+              <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/(tabs)/scanner');
+              }}
+                accessibilityRole="button" accessibilityLabel="Scan QR code"
+              >
                 <View className="w-12 h-12 bg-purple-50 rounded-full items-center justify-center">
                   <Ionicons name="qr-code" size={22} color="#9333ea" />
                 </View>
@@ -317,9 +349,56 @@ export default function Dashboard() {
             </>
           )}
 
+          {(features?.security) && (
+            <>
+              <View className="w-[1px] h-10 bg-slate-100" />
+              <TouchableOpacity
+                className="items-center space-y-2 flex-1"
+                accessibilityRole="button"
+                accessibilityLabel="Send SOS alert"
+                accessibilityHint="Double tap to send an emergency SOS alert"
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                  Alert.alert(
+                    '🚨 SOS Alert',
+                    'Send an emergency SOS alert to your supervisor?',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'SEND SOS',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) throw new Error('Not authenticated');
+                            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                            await (supabase as any).rpc('trigger_sos', { p_user_id: user.id });
+                            Alert.alert('SOS Sent', 'Your supervisor has been notified.');
+                          } catch (e: any) {
+                            Alert.alert('Error', e.message || 'Failed to send SOS');
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
+              >
+                <View className="w-12 h-12 bg-red-50 rounded-full items-center justify-center">
+                  <Ionicons name="alert-circle" size={22} color="#ef4444" />
+                </View>
+                <Text className="text-xs font-semibold text-red-600">SOS</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
           <View className="w-[1px] h-10 bg-slate-100" />
 
-          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => onRefresh()}>
+          <TouchableOpacity className="items-center space-y-2 flex-1" onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onRefresh();
+          }}
+            accessibilityRole="button" accessibilityLabel="Sync data"
+          >
             <View className="w-12 h-12 bg-emerald-50 rounded-full items-center justify-center">
               <Ionicons name="sync" size={22} color="#10b981" />
             </View>
@@ -342,6 +421,8 @@ export default function Dashboard() {
                     key={visit.id}
                     onPress={() => handleVisitPress(visit)}
                     className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm active:bg-blue-50/50 transition-colors"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Visit: ${visit.title}`}
                   >
                     <View className="flex-row justify-between mb-2">
                       <Text className="font-bold text-slate-800 text-base">{visit.title}</Text>
@@ -389,6 +470,7 @@ export default function Dashboard() {
                   key={task.id}
                   className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex-row items-center active:scale-[0.98] transition-transform"
                   onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     if (task.form_id) {
                       router.push({
                         pathname: '/(tabs)/form_entry',
@@ -398,6 +480,8 @@ export default function Dashboard() {
                       router.push('/(tabs)/tasks');
                     }
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Task: ${task.title}`}
                 >
                   <View className="w-12 h-12 bg-blue-50 rounded-xl items-center justify-center mr-4">
                     <Ionicons name={task.form_id ? "clipboard-outline" : "checkbox-outline"} size={22} color="#2563eb" />
