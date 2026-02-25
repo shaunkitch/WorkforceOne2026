@@ -1,6 +1,3 @@
-import { type NextRequest } from 'next/server'
-import { middleware as updateSession } from '@/lib/supabase/middleware'
-
 import { NextResponse, type NextRequest } from 'next/server'
 import { middleware as updateSession } from '@/lib/supabase/middleware'
 

@@ -60,7 +60,7 @@ export default async function ExpensesPage({ params }: PageProps) {
                         <div className="text-2xl font-bold text-green-600">
                             {autoApprovedCount}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">High confidence (>90%)</p>
+                        <p className="text-xs text-muted-foreground mt-1">High confidence (&gt;90%)</p>
                     </CardContent>
                 </Card>
                 <Card>
