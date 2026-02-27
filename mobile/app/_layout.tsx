@@ -8,6 +8,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
+// Remote push notifications were removed from Expo Go in SDK 53.
+// All notification setup must be skipped when running in Expo Go.
+const isExpoGo = Constants.appOwnership === 'expo';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import * as BackgroundFetch from 'expo-background-fetch';
@@ -16,16 +21,19 @@ import { offlineStore } from '../lib/offline-store';
 
 const BACKGROUND_SYNC_TASK = 'workforce-background-sync';
 
-// Configure how notifications appear when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Only set the notification handler in real builds (dev build / production APK).
+// In Expo Go, remote notifications are not supported since SDK 53.
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
   try {
@@ -94,16 +102,20 @@ export default function RootLayout() {
 
     initAuth();
 
-    // Request push notification permissions once on startup
-    Notifications.requestPermissionsAsync().catch(() => { });
+    // Request push notification permissions — only in real dev/prod builds.
+    // Expo Go SDK 53 removed remote notification support entirely.
+    let notificationSub: { remove: () => void } | null = null;
+    if (!isExpoGo) {
+      Notifications.requestPermissionsAsync().catch(() => { });
 
-    // Deep link: tap a notification -> navigate to security tab
-    const notificationSub = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data as any;
-      if (data?.screen) {
-        router.push(data.screen);
-      }
-    });
+      // Deep link: tap a notification -> navigate to security tab
+      notificationSub = Notifications.addNotificationResponseReceivedListener(response => {
+        const data = response.notification.request.content.data as any;
+        if (data?.screen) {
+          router.push(data.screen);
+        }
+      });
+    }
 
     // Register Background Fetch
     BackgroundFetch.registerTaskAsync(BACKGROUND_SYNC_TASK, {
@@ -122,7 +134,7 @@ export default function RootLayout() {
     return () => {
       clearTimeout(splashTimeout);
       subscription.unsubscribe();
-      notificationSub.remove();
+      notificationSub?.remove();
     };
   }, []); // ← empty deps: only run once, no re-subscription loops
 
